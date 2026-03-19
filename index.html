@@ -1,0 +1,318 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>ОУК НК3</title></head>
+<style>
+		html {
+		width: 1080px;
+		/*height: 1920px;
+		*/
+		}
+
+    body {
+      margin: 0;
+      transition: background 1s;
+	  font-family:Segoe UI,Arial;
+	  background:#111827;
+    }
+
+    /* Стили по умолчанию: все скрыто */
+  /*  .content-item {
+        display: none;
+        padding: 20px;
+        border: 1px solid #ccc;
+        margin-top: 10px;*/
+    }
+    /* Класс для отображения */
+    .content-item.active {
+        display: grid;
+    }
+	
+	
+.header{
+padding:10px;
+text-align:center;
+font-size:26px;
+font-weight:600;
+letter-spacing:1px;
+background:#111827;
+color:white;
+box-shadow:0 2px 10px rgba(0,0,0,0.5);
+}
+
+#grid{
+display:grid;
+grid-template-columns: repeat(10, 90px);
+gap:12px;
+justify-content:center;
+padding:30px;
+background:#0f172a;
+color:white;
+}
+
+#grid2{
+/*width: 1000px;*/
+height: 1800px;
+display:none;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-rows: repeat(auto-fit, minmax(50px, 1fr));
+  
+/*grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));*/
+gap:12px;
+justify-content:center;
+padding:30px;
+overflow: hidden;
+background:white;
+/*min-height:20vh;	*/
+}
+
+.cell{
+width:90px;
+height:70px;
+border-radius:10px;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+transition:0.3s;
+box-shadow:0 4px 10px rgba(0,0,0,0.4);
+position: relative;
+}
+
+.cell2{
+/*width:90px;
+height:70px;*/
+border-radius:10px;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+transition:0.3s;
+box-shadow:0 4px 10px rgba(0,0,0,0.4);
+}
+
+.cell:hover{
+transform:scale(1.05);
+}
+
+.number{
+font-size:36px;
+font-weight:bold;
+margin-bottom:6px;
+position: absolute;
+top: -3px;
+}
+
+.number2{
+font-size:36px;
+font-weight:bold;
+margin-bottom:6px;
+color:white;
+/*font-size: 2em;*/
+}
+
+.green{
+background:#16a34a;
+
+}
+
+.red{
+background:#dc2626;
+}
+.gold {
+background:#ffd700;
+font-size:36px;
+font-weight:bold;
+/*margin-bottom:6px;*/
+color:#333;
+}
+.circles{
+
+display:flex;
+gap:12px;
+  position: absolute;
+  top: 46px;          /* Смещение вниз от верхнего края контейнера */  
+}
+
+.circle{
+width:18px;
+height:18px;
+border-radius:50%;
+background:#374151;
+box-shadow:0 0 5px rgba(0,0,0,0.6);
+
+}
+
+.circle.green{
+background:#22c55e;
+}
+
+.circle.red{
+background:#ef4444;
+}
+
+.footer{
+text-align:center;
+padding:10px;
+font-size:12px;
+color:#9ca3af;
+}	
+	
+</style>
+</head>
+<body>
+
+<div class="header">
+Оплата консьержа НК3 <span id="current-month"></span>
+</div><div class="content-item active" id="grid"></div>
+<div class="content-item" id="grid2"></div>
+
+
+<script>
+
+const now = new Date();
+const month = String(now.getMonth() + 1).padStart(2, '0'); // Добавляет 0, если месяц < 10
+const year = now.getFullYear();
+document.getElementById('current-month').innerText = `${month}/${year}`;
+
+  
+const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv"
+
+    async function loadData() {
+
+    const res = await fetch(sheetURL)
+        const text = await res.text()
+
+        const rows = text.trim().split("\n").slice(1)
+
+        const data = rows.map(r => {
+            const[id, current, prev, next] = r.split(",")
+
+                return {
+                id: String(id),
+                current: Number(current),
+                prev: Number(prev),
+                next: Number(next)
+            }
+        })
+
+        render(data)
+		render2(data)
+}
+
+function render(data) {
+
+    const grid = document.getElementById("grid")
+        grid.innerHTML = ""
+
+        data.forEach(item => {
+
+            const cell = document.createElement("div")
+				
+				if (String(item.id).toLowerCase().includes('i')) { 
+				cell.className = "cell gold"			
+				cell.innerHTML = `<div>${item.id.replace("i", "")}</div>`
+				
+				}
+				else if (item.id === "0") {
+				cell.className = "pust"
+				}
+				else {
+                cell.className = "cell " +  (item.current == 1 ? "green" : "red")
+
+                cell.innerHTML = `
+
+								<div class="number">${item.id}</div>
+
+								<div class="circles">
+
+								<div class="circle ${item.prev==1?"green":"red"}"></div>
+
+								<div class="circle ${item.next==1?"green":"red"}"></div>
+
+								</div>
+								`
+				}
+                grid.appendChild(cell)
+
+        })
+
+}
+
+function render2(data) {
+		const filteredArray = data.filter(item => item.id !== "0" && !String(item.id).includes('i') && item.current == 0);
+		filteredArray.sort((a, b) => a.id - b.id);
+		 // [10, 5, 'тест'] console.log(filteredArray);
+            
+		const grid2 = document.getElementById("grid2")       
+		grid2.innerHTML = ""
+
+        filteredArray.forEach(item => {
+
+            
+				
+				if (String(item.id).toLowerCase().includes('i')) { 		
+				}
+				else if (item.id === "0") {
+				}
+				else if (item.current == 0) {
+				const cell = document.createElement("div")
+				
+                cell.className = "cell2 " +  (item.current == 1 ? "green" : "red")
+
+                cell.innerHTML = `
+
+								<div class="number2">${item.id}</div>
+							
+								`
+				grid2.appendChild(cell)
+				}
+                
+
+        })
+
+}
+
+
+loadData()
+
+
+    let items = document.querySelectorAll('.content-item');
+    let currentIndex = 0;
+
+    function showNextItem() {
+        // Скрываем текущий элемент
+      /*  items[currentIndex].classList.remove('active');
+        
+        // Переключаем индекс
+        currentIndex = (currentIndex + 1) % items.length;
+        
+        // Показываем следующий
+        items[currentIndex].classList.add('active');*/
+    
+		console.log(currentIndex);
+		
+		if (currentIndex == 0) {
+		document.getElementsByClassName("header")[0].style.background="white";
+		document.getElementsByClassName("header")[0].style.color="#111827";
+		} else {
+		document.getElementsByClassName("header")[0].style.background="#111827";
+		document.getElementsByClassName("header")[0].style.color="white";
+		}
+		
+		
+	  items[currentIndex].style.display = 'none';
+	  
+	  // Индекс следующего
+	  currentIndex = (currentIndex + 1) % items.length;
+	  
+	  // Показываем как GRID
+	  items[currentIndex].style.display = 'grid'; 
+  }
+    // Запускаем цикл каждые 2000 мс (2 секунды)
+
+setInterval(showNextItem, 30000);
+	
+	
+
+</script>
+
+</body>
+</html>
