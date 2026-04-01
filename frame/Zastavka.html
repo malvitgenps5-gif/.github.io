@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Final SVG Layout</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.screen {
+  width: 1080px;
+  height: 1920px;
+  display: flex;
+  overflow: hidden;
+  background: black;
+}
+
+/* ЛЕВАЯ ЧАСТЬ */
+.left {
+  width: 540px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: black;
+}
+
+.left-track {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  animation: scrollDown 15s linear infinite;
+  
+}
+
+.left img {
+  height: 400px;
+  width: auto;
+  margin: 820px 0;
+  transform: rotate(-90deg);
+}
+
+
+/* ПРАВАЯ ЧАСТЬ */
+.right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.block {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  border-bottom: black; /*1px solid #333*/
+}
+
+/* ГОРИЗОНТАЛЬНЫЙ ТРЕК */
+.track-x {
+  position: absolute;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.track-x img {
+  height: 80%;
+  margin-right: 40px;
+}
+
+/* 1 блок */
+.block1 .track-x {
+  animation: scrollLeft 12s linear infinite;
+}
+
+/* 2 блок */
+.block2 .track-x {
+  animation: scrollRight 14s linear infinite;
+}
+
+/* 3 блок */
+.block3 .track-x {
+  animation: scrollLeftOffset 16s linear infinite;
+}
+
+/* АНИМАЦИИ */
+@keyframes scrollDown {
+  0% { transform: translateY(-50%) translateY(1300px); }
+  100% { transform: translateY(0) translateY(1300px); }
+}
+
+@keyframes scrollLeft {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes scrollRight {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes scrollLeftOffset {
+  0% { transform: translateX(-25%); }
+  100% { transform: translateX(-75%); }
+}
+</style>
+</head>
+
+<body>
+
+<div class="screen">
+
+  <!-- ЛЕВАЯ -->
+  <div class="left">
+    <div class="left-track">
+      <img src="/svg/dmit2.svg">
+      <img src="/svg/dmit2.svg"> 
+	  <img src="/svg/dmit2.svg"> 
+	  <img src="/svg/dmit2.svg"> 
+    </div>
+  </div>
+
+  <!-- ПРАВАЯ -->
+  <div class="right">
+
+    <div class="block block1">
+      <div class="track-x">
+        <img src="/svg/dmit2.svg">
+        <img src="/svg/dmit2.svg">
+        <img src="/svg/dmit2.svg">
+        <img src="/svg/dmit2.svg">
+      </div>
+    </div>
+
+    <div class="block block2">
+      <div class="track-x">
+        <img src="/svg/dmit2.svg">
+        <img src="/svg/dmit2.svg">
+        <img src="/svg/dmit2.svg">
+        <img src="/svg/dmit2.svg">
+      </div>
+    </div>
+
+    <div class="block block3">
+      <div class="track-x">
+        <img src="/svg/dmit2.svg">
+        <img src="/svg/dmit2.svg">
+        <img src="/svg/dmit2.svg">
+        <img src="/svg/dmit2.svg">
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

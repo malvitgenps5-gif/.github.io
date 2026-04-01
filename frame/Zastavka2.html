@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Final SVG Layout</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.screen {
+  width: 1080px;
+  height: 1920px;
+  display: flex;
+  overflow: hidden;
+  background: black;
+}
+
+.reveal-logo {
+	width: 1080px;
+  animation: reveal 5s ease-in-out forwards;
+}
+
+@keyframes reveal {
+  from { clip-path: inset(0 100% 0 0); } /* Полностью скрыт справа */
+  to { clip-path: inset(0 0 0 0); }      /* Полностью открыт */
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="screen">
+<img src="/svg/dmit3.svg" class="reveal-logo" alt="Логотип">
+ 
+
+</div>
+
+</body>
+</html>
