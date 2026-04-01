@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<link rel="preconnect" href="https://googleapis.com">
+<link rel="preconnect" href="https://gstatic.com" crossorigin>
+<link href="https://googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap" rel="stylesheet">
+<head>
+<meta charset="UTF-8">
+<title>Консьерж страница</title>
+<style>
+html {
+background: black;
+}
+    body {
+        margin: 0;
+        background: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: 'Comfortaa', cursive;
+		font-weight: 700; /* Жирное начертание для логотипа */
+        color: black;
+    }
+
+    .container {
+        width: 1080px;
+        height: 1920px;
+        background: #eec11e;
+        border-radius: 40px;
+        padding: 20px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .block {
+        flex: 1;
+        border-radius: 30px;
+    }
+
+    /* Первый блок */
+    .top-block {
+        display: flex;
+        gap: 20px;
+		
+    }
+
+    .square {
+		
+        flex: 1;
+        
+        border-radius: 30px;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        font-size: 78px;
+        text-align: center;
+		border: 10px solid white;
+    }
+
+    .square svg {
+        width: 60%;
+        height: auto;
+    }
+
+    /* Блоки текста */
+    .info-block {
+		background: #eec11e;
+		color: white;
+		padding: 40px;
+		font-size: 60px;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		border-radius: 30px;
+		border: 10px solid white;
+    }
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- 1 блок -->
+    <div class="block top-block">
+        <div class="square1">
+            <!-- SVG пример -->
+			<img src="../svg/dmit7.svg" alt="SVG"  height="395">
+
+        </div>
+
+        <div class="square" id="dateBlock">
+            <!-- Дата вставится через JS -->
+        </div>
+    </div>
+
+    <!-- 2 блок -->
+    <div class="block info-block">
+        <div>Консьерж</div>
+        <div>Светлана</div>
+        <div>+7 999 000-00-00</div>
+    </div>
+
+    <!-- 3 блок -->
+    <div class="block info-block">
+        <div>Информация</div>
+    </div>
+
+    <!-- 4 блок -->
+    <div class="block info-block">
+        <div>Срочные объявления</div>
+    </div>
+
+</div>
+
+<script>
+    const dateBlock = document.getElementById("dateBlock");
+    const now = new Date();
+
+    const months = [
+        "января", "февраля", "марта", "апреля",
+        "мая", "июня", "июля", "августа",
+        "сентября", "октября", "ноября", "декабря"
+    ];
+
+    const day = now.getDate();
+    const month = months[now.getMonth()];
+    const year = now.getFullYear();
+
+    dateBlock.innerHTML = `
+        <div>${day}</div>
+        <div>${month}</div>
+        <div>${year}</div>
+    `;
+</script>
+
+</body>
+</html>
