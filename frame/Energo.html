@@ -122,7 +122,7 @@ function render(data) {
 				cell.className = "pust"
 				}
 				else {
-                cell.className = "cell " +  (item.energo == 0 ? "green" : "red")
+                cell.className = "cell " +  (item.energo === 0 ? "green" : "red")
 
                 cell.innerHTML = `
 								<div class="number">${item.id}</div>
