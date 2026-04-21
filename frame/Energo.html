@@ -62,6 +62,10 @@ background: #071f3b;
 .red {
 background: #dc229a ;
 }
+
+.red2 {
+background: #3f7bc0;
+}
 .gold {
 background:#ffd700;
 font-size:36px;
@@ -91,10 +95,11 @@ const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxu
         const rows = text.trim().split("\n").slice(1)
 
         const data = rows.map(r => {
-            const[id, , , , , , ,netMesLastIndication] = r.split(",")
+            const[id, , , , energo, , ,netMesLastIndication] = r.split(",")
 
                 return {
                 id: String(id),
+				tenergo: Number(energo),
                 energo: Number(netMesLastIndication)
             }
         })
@@ -106,6 +111,7 @@ const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxu
 function render(data) {
 
 	const colors = { 0: "grey", 1: "red", 2: "green" };
+	const colors2 = { 0: "grey", 1: "red2", 2: "green" };
 	
     const grid = document.getElementById("grid")
         grid.innerHTML = ""
@@ -122,12 +128,16 @@ function render(data) {
 				else if (item.id === "0") {
 				cell.className = "pust"
 				}
-				else {               
-				cell.className = "cell " + (colors[item.energo] || "");
-
-                cell.innerHTML = `
-								<div class="number">${item.id}</div>
-								`
+				else {  
+					if (item.energo === "0") {
+						cell.className = "cell " + (colors2[item.tenergo] || "");
+					}
+					else {
+						cell.className = "cell " + (colors[item.energo] || "");
+					}	
+					cell.innerHTML = `
+									<div class="number">${item.id}</div>					
+									`
 				}
                 grid.appendChild(cell)
 
