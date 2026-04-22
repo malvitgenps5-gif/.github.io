@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
 <meta charset="UTF-8">
-<title>ЖК Дмитриевский</title>
+<title>Final SVG Layout</title>
 
 <style>
 html, body {
@@ -18,28 +19,45 @@ html, body {
 .screen {
   width: 1080px;
   height: 1920px;
-  display: flex;
+  /*position: relative;*/
   overflow: hidden;
   background: black;
 }
 
-.reveal-logo {
-	width: 1080px;
-  animation: reveal 5s ease-in-out forwards;
+.screen img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
 }
 
-@keyframes reveal {
-  from { clip-path: inset(0 100% 0 0); } /* Полностью скрыт справа */
-  to { clip-path: inset(0 0 0 0); }      /* Полностью открыт */
+/* Слева направо */
+.reveal-logo1 {
+  animation: revealLeft 5s ease-in-out forwards;
 }
 
+/* Справа налево */
+.reveal-logo2 {
+  animation: revealRight 5s ease-in-out forwards;
+}
+
+@keyframes revealLeft {
+  from { clip-path: inset(0 100% 0 0); } /* скрыт справа */
+  to   { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes revealRight {
+  from { clip-path: inset(0 0 0 100%); } /* скрыт слева */
+  to   { clip-path: inset(0 0 0 0); }
+}
 </style>
 </head>
 
 <body>
 
 <div class="screen">
-<img src="../svg/dmit3.svg" class="reveal-logo" alt="Логотип">
+<img src="dmit8_2.svg" class="reveal-logo1" alt="Логотип">
+<img src="dmit8_1.svg" class="reveal-logo2" alt="Логотип">
  
 
 </div>
