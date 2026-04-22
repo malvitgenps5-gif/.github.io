@@ -204,7 +204,7 @@ background: black;
     <div class="block top-block">
         <div class="square1">
             <!-- SVG пример -->
-			<img src="..svg/dmit7.svg" alt="SVG"  height="395">
+			<img src="../svg/dmit7.svg" alt="SVG"  height="395">
 
         </div>
 
@@ -290,10 +290,10 @@ background: black;
 	  const map = {};
 	  data.forEach(d => map[d.Pole] = d.Param);
 
-	  document.getElementById("img1").src = `png/s_${map["s"]}.png`;
-	  document.getElementById("img2").src = `png/a_${map["a"]}.png`;
-	  document.getElementById("img3").src = `png/c_${map["c"]}.png`;
-	  document.getElementById("img4").src = `png/h_${map["h"]}.png`;
+	  document.getElementById("img1").src = `../png/s_${map["s"]}.png`;
+	  document.getElementById("img2").src = `../png/a_${map["a"]}.png`;
+	  document.getElementById("img3").src = `../png/c_${map["c"]}.png`;
+	  document.getElementById("img4").src = `../png/h_${map["h"]}.png`;
 	  document.getElementById("concierge").innerHTML = `${map["concierge"]}`;
 	  document.getElementById("comment").innerHTML = `${map["comment"]}`;
 	  
