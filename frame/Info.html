@@ -91,15 +91,16 @@ background: black;
 
   .blockk {
     padding: 20px;
-    background: #a8f1d1;
-    /*border: 2px solid #333;
-    text-align: center;*/
+    text-align: center;
 	border-radius: 20px;
-	font-size: 30px;
+	font-size: 45px;
 	display: flex;
 	align-items: center;    
     justify-content: center;
 	transition: background-color 0.5s ease, box-shadow 0.5s ease;
+	background-color: white; 
+	color: #eec11e;
+	text-align: center;
   }
   
 /* Класс для "красного" состояния */
@@ -109,26 +110,10 @@ background: black;
   box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
 }
 
-  .b1 {
-    /* Помещаем первый блок во вторую колонку первой строки */
-    grid-column: 2;
-    grid-row: 1;
-	
-  }
-
-  .b2 {
-    /* Второй блок: первая колонка, вторая строка */
-    grid-column: 1;
-    grid-row: 2;
-	width: 50%;
-	justify-self: end;
-  }
-
-  .b3 {
-    /* Третий блок: вторая колонка, вторая строка */
-    grid-column: 2;
-    grid-row: 2;
-  }
+/* позиции */
+.b1{grid-column:2;grid-row:1}
+.b2{grid-column:1;grid-row:2;width:50%;justify-self:end}
+.b3{grid-column:2;grid-row:2}
   
   .container3 {
   display: flex;
@@ -189,10 +174,17 @@ background: black;
 
 /* Класс, который мы будем вешать на картинку */
 .pulse-active {
-  border: 2px solid red;
+ /* border: 2px solid red;*/
   animation: pulse-red 2s infinite ease-in-out;
   transition: all 0.5s ease;
 }
+
+.your-class {
+  /* Это превратит любой цвет в красный */
+  filter: brightness(0) saturate(100%) invert(15%) sepia(95%) saturate(6932%) hue-rotate(358deg) brightness(95%) contrast(112%);
+
+}
+
 </style>
 </head>
 <body>
@@ -218,20 +210,19 @@ background: black;
     </div>
 
     <!-- 3 блок -->
-    <div class="block info-block">
-        <div>Информация</div>
+    <div class="block info-block">    
 		<div class="container3">
 			  <div class="left">
-				<img id="img1" src = "../png/s_1.png">
-				<img id="img2" src = "../png/a_1.png">
-				<img id="img3" src = "../png/c_1.png">
-				<img id="img4" src = "../png/h_1.png">
+				<img id="s" src = "../svg/s.svg">
+				<img id="a" src = "../svg/a.svg">
+				<img id="c" src = "../svg/c.svg">
+				<img id="h" src = "../svg/h.svg">
 			  </div>
 
 			  <div class="right">
-				<div class="blockk b1" id="box3">Лифт 3</div>
-				<div class="blockk b2" id="box1">Лифт 1</div>
-				<div class="blockk b3" id="box2">Лифт 2</div>
+				<div class="blockk b1" id="L3">3<br>Лифт</div>
+				<div class="blockk b2" id="L1">1<br>Лифт</div>
+				<div class="blockk b3" id="L2">2<br>Лифт</div>
 			  </div>
 			</div>
     </div>
@@ -245,107 +236,40 @@ background: black;
 </div>
 
 <script>
-    const dateBlock = document.getElementById("dateBlock");
-    const now = new Date();
+const d=new Date();
+const m=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+dateBlock.innerHTML=`<div>${d.getDate()}</div><div>${m[d.getMonth()]}</div><div>${d.getFullYear()}</div>`;
 
-    const months = [
-        "января", "февраля", "марта", "апреля",
-        "мая", "июня", "июля", "августа",
-        "сентября", "октября", "ноября", "декабря"
-    ];
+/* ДАННЫЕ */
+const url="https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=964373523&output=csv";
 
-    const day = now.getDate();
-    const month = months[now.getMonth()];
-    const year = now.getFullYear();
+fetch(url).then(r=>r.text()).then(t=>{
+  const map={};
 
-    dateBlock.innerHTML = `
-        <div>${day}</div>
-        <div>${month}</div>
-        <div>${year}</div>
-    `;
-	const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=964373523&single=true&output=csv"
+  t.trim().split("\n").slice(1).forEach(r=>{
+    let [k,v]=r.split(",");
+    map[k]=v;
+  });
 
-    async function loadData() {
+  concierge.innerHTML=map.concierge||"";
+  comment.innerHTML=map.comment||"";
 
-    const res = await fetch(sheetURL)
-        const text = await res.text()
+  const relations=["s","a","c","h"];
+  const lifts=["L1","L2","L3"];
 
-        const rows = text.trim().split("\n").slice(1)
+  [...relations,...lifts].forEach(id=>{
+    const el=document.getElementById(id);
+    const val=map[id]?.trim();
 
-        const data = rows.map(r => {
-            const[Pole, Param] = r.split(",")
+    el.classList.toggle("pulse-active",val==="0");
 
-                return {
-                Pole: String(Pole),
-                Param: String(Param)
-            }
-        })
+    if(lifts.includes(id))
+      el.classList.toggle("lift-danger",val==="0");
+    else
+      el.classList.toggle("your-class",val==="0");
+  });
 
-        updateImages(data)
-
-}
-
-	function updateImages(data) {
-	  const map = {};
-	  data.forEach(d => map[d.Pole] = d.Param);
-
-	  document.getElementById("img1").src = `../png/s_${map["s"]}.png`;
-	  document.getElementById("img2").src = `../png/a_${map["a"]}.png`;
-	  document.getElementById("img3").src = `../png/c_${map["c"]}.png`;
-	  document.getElementById("img4").src = `../png/h_${map["h"]}.png`;
-	  document.getElementById("concierge").innerHTML = `${map["concierge"]}`;
-	  document.getElementById("comment").innerHTML = `${map["comment"]}`;
-	  
-	  const relations = {
-		"img1": "s",
-		"img2": "a",
-		"img3": "c",
-		"img4": "h",
-		"box1": "L1",
-		"box2": "L2",
-		"box3": "L3"
-	  };
-
-
-		Object.keys(relations).forEach(id => {
-		  const key = relations[id];
-		  const value = map[key];
-		  const element = document.getElementById(id);
-
-		  if (value && value.trim() === "0") {
-			// Включаем пульсацию
-			element.classList.add("pulse-active");
-		  } else {
-			// Выключаем пульсацию
-			element.classList.remove("pulse-active");
-			element.style.border = "2px solid transparent"; // сброс рамки
-			element.style.boxShadow = "none";
-		  }
-		});
-		
-		const liftRelations = {
-		  "box1": "L1", // ID блока : Ключ в вашей таблице (Pole)
-		  "box2": "L2",
-		  "box3": "L3"
-		};
-
-		Object.keys(liftRelations).forEach(id => {
-		  const key = liftRelations[id];
-		  const value = map[key];
-		  const element = document.getElementById(id);
-
-		  if (element) {
-			// Если значение равно "1", добавляем красный класс
-			if (value && value.trim() === "0") {
-			  element.classList.add("lift-danger");
-			} else {
-			  element.classList.remove("lift-danger");
-			}
-		  }
-		});
-		
-	}
-loadData()	
+});	
 </script>
 
 </body>
