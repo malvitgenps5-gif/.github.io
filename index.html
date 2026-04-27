@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Слайдер с плавным переходом</title>
+  <title>ЖК Дмитриевский</title>
 
   <style>
     body {
@@ -36,26 +36,68 @@
 <iframe id="frame2" class="frame"></iframe>
 
 <script>
-const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=1363299470&single=true&output=csv";
+async function getSharedData() {
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv';
+    const CACHE_KEY = 'sheet_data';
+    const TIMESTAMP_KEY = 'sheet_timestamp';
+    const TTL = 5 * 60 * 1000; // 5 минут в миллисекундах
+
+    const cached = localStorage.getItem(CACHE_KEY);
+    const lastUpdate = parseInt(localStorage.getItem(TIMESTAMP_KEY), 10);
+    const now = Date.now();
+
+    // Если данные есть и они свежие — берем их
+    if (cached && lastUpdate && (now - lastUpdate < TTL)) {
+        console.log('Фрейм взял данные из LocalStorage');
+        return cached;
+    }
+
+    // Если данных нет или они протухли — запрашиваем
+    try {
+        console.log('Фрейм делает сетевой запрос...');
+        const response = await fetch(CSV_URL);
+        const data = await response.text();
+		
+        // Сохраняем для следующих фреймов
+        localStorage.setItem(CACHE_KEY, data);
+        localStorage.setItem(TIMESTAMP_KEY, now.toString());
+
+        return data;
+    } catch (err) {
+        console.error('Ошибка загрузки:', err);
+        return cached; // Если сеть упала, отдаем хоть что-то старое
+    }
+}
 
 let pages = [];
 let current = 0;
 let activeFrame = 1;
 
-fetch(url)
-  .then(res => res.text())
-  .then(csv => {
+// Запуск при загрузке фрейма
+getSharedData().then(csv => {
     const rows = csv.split("\n").map(r => r.split(","));
-    const headers = rows[0];
+    
+    // Чистим заголовки, чтобы поиск индексов сработал точно
+    const headers = rows[0].map(h => h.trim());
+    const urlIdx = headers.indexOf("url");
+    const durationIdx = headers.indexOf("duration");
 
-    pages = rows.slice(1).map(row => {
-      let obj = {};
-      headers.forEach((h, i) => obj[h.trim()] = row[i]?.trim());
-      return obj;
-    });
+    pages = rows.slice(1)
+        .map(row => {
+            return {
+                url: row[urlIdx]?.trim() || "",
+                duration: row[durationIdx]?.trim() || ""
+            };
+        })
+        // Фильтрация после выбора столбцов:
+        // Оставляем только те строки, где есть и ссылка, и длительность
+        .filter(page => page.url !== "" && page.duration !== "");
 
     startSlider();
-  });
+    
+    console.log('Данные получены. Полезных строк:', pages.length);
+});
+
 
 function startSlider() {
   if (pages.length === 0) return;
@@ -64,8 +106,11 @@ function startSlider() {
 }
 
 function showNext() {
+  if (current >= pages.length) current = 0; // Защита от выхода за границы массива
+  
   const page = pages[current];
-  const duration = parseInt(page.duration) || 30000;
+  const duration = Number(page.duration);
+  const safeDuration = isNaN(duration) ? 30000 : duration;
 
   const frame1 = document.getElementById("frame1");
   const frame2 = document.getElementById("frame2");
@@ -73,26 +118,57 @@ function showNext() {
   let currentFrame = activeFrame === 1 ? frame1 : frame2;
   let nextFrame = activeFrame === 1 ? frame2 : frame1;
 
-  // загружаем следующую страницу в скрытый iframe
-  nextFrame.src = "frame/" + page.url;
-
-  // ждём загрузку
+  // 1. Сначала очищаем старый обработчик и ставим новый
+  nextFrame.onload = null; 
   nextFrame.onload = () => {
+    // 2. Переключаем видимость
     nextFrame.classList.add("active");
     currentFrame.classList.remove("active");
 
-    // переключаем активный iframe
+    // 3. Обновляем состояние
     activeFrame = activeFrame === 1 ? 2 : 1;
-
     current = (current + 1) % pages.length;
 
+    // 4. Планируем следующий переход
     setTimeout(showNext, duration);
   };
+
+  // 5. Обработка ошибки (чтобы цикл не встал)
+  nextFrame.onerror = () => {
+    console.error("Ошибка загрузки страницы");
+    current = (current + 1) % pages.length;
+    setTimeout(showNext, 1000); // Пробуем следующую через секунду
+  };
+
+  // 6. И только в самом конце запускаем загрузку
+  nextFrame.src = "frame/" + page.url;
+}
+
+async function refreshPagesList() {
+    const csv = await getSharedData();
+    const rows = csv.split("\n").map(r => r.split(","));
+    
+    // Обязательно добавляем [0], чтобы читать заголовки из первой строки
+    const headers = rows[0].map(h => h.trim()); 
+    const urlIdx = headers.indexOf("url");
+    const durationIdx = headers.indexOf("duration");
+
+    const newPages = rows.slice(1)
+        .map(row => ({
+            url: row[urlIdx]?.trim() || "",
+            duration: row[durationIdx]?.trim() || ""
+        }))
+        .filter(page => page.url !== "" && page.duration !== "");
+
+    if (newPages.length > 0) {
+        pages = newPages;
+        console.log('Список ссылок обновлен в фоне. Всего:', pages.length);
+    }
 }
 
 setInterval(() => {
-  location.reload();
-}, 60000); // обновлять список каждую минуту
+    refreshPagesList();
+}, 360000); 
 
 </script>
 
