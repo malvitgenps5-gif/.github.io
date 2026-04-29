@@ -162,13 +162,16 @@ function render(data) {
 
 					if (item.energo === 0) {
 						cell.className = "cell " + (colors2[item.tenergo] || "");
+						cell.innerHTML = `
+									<div class="number"></div>					
+									`
 					}
 					else {
 						cell.className = "cell " + (colors[item.energo] || "");
-					}	
-					cell.innerHTML = `
+						cell.innerHTML = `
 									<div class="number">${item.id}</div>					
 									`
+					}	
 				}
                 grid.appendChild(cell)
 
