@@ -184,7 +184,24 @@ background: black;
   filter: brightness(0) saturate(100%) invert(15%) sepia(95%) saturate(6932%) hue-rotate(358deg) brightness(95%) contrast(112%);
 
 }
+	
+.image-container:has(img.your-class) {
+  position: relative;
+  display: inline-block;
+  z-index: 1;
+}
 
+.image-container:has(img.your-class)::before {
+  content: "";
+  position: absolute;
+  top: 5px;  /* Смещение вниз */
+  left: 5px; /* Смещение вправо */
+  width: 90%;
+  height: 90%;
+  background-color: white;
+  z-index: -1; /* Уводит блок за картинку */
+  border-radius: 20px;
+}
 </style>
 </head>
 <body>
@@ -213,10 +230,10 @@ background: black;
     <div class="block info-block">    
 		<div class="container3">
 			  <div class="left">
-				<img id="s" src = "../svg/s.svg">
-				<img id="a" src = "../svg/a.svg">
-				<img id="c" src = "../svg/c.svg">
-				<img id="h" src = "../svg/h.svg">
+				<div class="image-container"><img id="s" src = "../svg/s.svg"></div>
+				<div class="image-container"><img id="a" src = "../svg/a.svg"></div>
+				<div class="image-container"><img id="c" src = "../svg/c.svg"></div>
+				<div class="image-container"><img id="h" src = "../svg/h.svg"></div>
 			  </div>
 
 			  <div class="right">
