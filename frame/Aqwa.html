@@ -154,9 +154,16 @@ function render(data) {
 				else {               
 				cell.className = "cell " + (colors[item.energo] || "");
 
-                cell.innerHTML = `
-								<div class="number">${item.id}</div>
-								`
+				if (item.energo === 0) {
+						cell.innerHTML = `
+									<div class="number"></div>					
+									`
+					}
+					else {
+						cell.innerHTML = `
+									<div class="number">${item.id}</div>					
+									`
+					}
 				}
                 grid.appendChild(cell)
 
