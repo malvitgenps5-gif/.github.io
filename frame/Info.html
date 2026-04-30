@@ -35,7 +35,7 @@ background: black;
     }
 
     .block {
-        flex: 1;
+        flex-shrink: 1;
         border-radius: 30px;
     }
 
@@ -207,10 +207,16 @@ background: black;
   z-index: -1; /* Уводит блок за картинку */
   border-radius: 20px;
 }
+.info-block:nth-child(2) {
+ height:340px;
+}
+
 .info-block:nth-child(4) {
  padding: 20px;
  font-size: 50px;
+ flex-grow: 1;
 }
+
 </style>
 </head>
 <body>
