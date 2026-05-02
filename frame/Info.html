@@ -266,12 +266,24 @@ background: black;
     </div>
 
 </div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 <script>
 const d=new Date();
 const m=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 dateBlock.innerHTML=`<div>${d.getDate()}</div><div>${m[d.getMonth()]}</div><div>${d.getFullYear()}</div>`;
 
+	function decryptAES(ciphertext, key) {
+    try {
+        const bytes = CryptoJS.AES.decrypt(ciphertext, key);
+        const originalText = bytes.toString(CryptoJS.enc.Utf8);
+        if (!originalText) {
+            return "Ошибка: Неверный ключ или поврежденные данные";
+        }
+        return originalText;
+    } catch (error) {
+        return "Ошибка при расшифровке: " + error.message;
+    }
+}
 /* ДАННЫЕ */
 
 async function getSharedData() {
@@ -327,7 +339,7 @@ getSharedData().then(csv => {
     
     // Заполняем текстовые блоки, если они есть в CSV
     if (document.getElementById('concierge')) 
-        document.getElementById('concierge').innerHTML = dataMap.concierge || "";
+        document.getElementById('concierge').innerHTML = decryptAES(dataMap.concierge || "", ".^O4K5#ZSq$;,)s!Yh9Q");
     if (document.getElementById('comment')) 
         document.getElementById('comment').innerHTML = dataMap.comment || "";
 
