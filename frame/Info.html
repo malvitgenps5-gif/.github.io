@@ -316,32 +316,43 @@ async function getSharedData() {
 }
 
 async function getMvd() {
-    const url = 'https://xn--b1aew.xn--p1ai/district/search?subject=7700000000000&subzone=&city=&street=77000000000739300&type=district&offset=0&address=%D0%B4.+2%2C+%D0%B4.+4%2C+%D0%B4.+5'; // Замените на реальный адрес
     const container = document.getElementById('comment');
+    // Ваш целевой URL
+    const targetUrl = 'https://xn--b1aew.xn--p1ai/district/search?subject=7700000000000&subzone=&city=&street=77000000000739300&type=district&offset=0&address=%D0%B4.+2%2C+%D0%B4.+4%2C+%D0%B4.+5';
+    
+    // Используем прокси, который работает с HTTPS (важно для GitHub Pages)
+    const proxyUrl = `https://allorigins.win{encodeURIComponent(targetUrl)}`;
 
     try {
-        // Выполняем запрос
-        const response = await fetch(url);
-        const htmlText = await response.text();
+        if (container) container.innerHTML = "Загрузка данных МВД...";
 
-        // Превращаем текст в HTML-объект для удобного поиска
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error('Ошибка прокси-сервера');
+        
+        const data = await response.json();
+        const htmlText = data.contents; // Получаем HTML код страницы через прокси
+
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlText, 'text/html');
 
-        // Извлекаем данные по селекторам
+        // Парсим конкретные блоки из вашего HTML-примера
         const text1 = doc.querySelector('.district-list__subtitle')?.innerText.trim() || "";
         const text2 = doc.querySelector('.district-list__name')?.innerText.trim() || "";
+        // Берем текст телефона/ФИО из блока district-list__title
         const text3 = doc.querySelector('.district-list__title b')?.innerText.trim() || "";
 
-        // Объединяем в одну строку
-        const result = `${text1} ${text2} ${text3}`.trim();
+        // Собираем всё в одну строку
+        const result = [text1, text2, text3].filter(val => val.length > 0).join(' | ');
 
-        // Обновляем элемент на странице
-        if (container) container.innerHTML = result || "Данные не найдены";
+        if (container) {
+            container.innerHTML = result || "Данные на сайте МВД отсутствуют";
+        }
 
     } catch (error) {
-        console.error('Ошибка загрузки:', error);
-        if (container) container.innerHTML = "Ошибка загрузки данных";
+        console.error('Ошибка парсинга:', error);
+        if (container) {
+            container.innerHTML = "Не удалось получить данные с сайта МВД (ошибка доступа)";
+        }
     }
 }
 
