@@ -315,42 +315,6 @@ async function getSharedData() {
     }
 }
 
-async function getMvd() {
-    const container = document.getElementById('comment');
-    const targetUrl = 'https://мвд.рф/district/search?subject=7700000000000&subzone=&city=&street=77000000000739300&type=district&offset=0&address=д.+2%2C+д.+4%2C+д.+5';
-    
-    // Правильный URL для API allorigins
-    const proxyUrl = `https://allorigins.win{encodeURIComponent(targetUrl)}`;
-
-    try {
-        if (container) container.innerHTML = "Загрузка данных МВД...";
-
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('Ошибка сети');
-        
-        const data = await response.json();
-        const htmlText = data.contents; // Текст страницы находится здесь
-
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlText, 'text/html');
-
-        // Извлекаем данные
-        const text1 = doc.querySelector('.district-list__subtitle')?.innerText.trim() || "";
-        const text2 = doc.querySelector('.district-list__name')?.innerText.trim() || "";
-        const text3 = doc.querySelector('.district-list__title b')?.innerText.trim() || "";
-
-        // Объединяем в одну строку
-        const result = [text1, text2, text3].filter(Boolean).join(' ');
-
-        if (container) {
-            container.innerHTML = result || "Информация не найдена";
-        }
-
-    } catch (error) {
-        console.error('Ошибка:', error);
-        if (container) container.innerHTML = "Ошибка при получении данных";
-    }
-}
 getSharedData().then(csv => {
     if (!csv) return;
 
@@ -376,14 +340,16 @@ getSharedData().then(csv => {
     // Заполняем текстовые блоки, если они есть в CSV
     if (document.getElementById('concierge')) 
         document.getElementById('concierge').innerHTML = decryptAES(dataMap.concierge || "", ".^O4K5#ZSq$;,)s!Yh9Q");
-	if (document.getElementById('comment')) {
-		const commentValue = String(dataMap.comment || "").trim();
-		
-		if (commentValue === "" || commentValue === "0") {
-			getMvd(); // Запустит асинхронное обновление
-		} else {
-			document.getElementById('comment').innerHTML = commentValue;
-		}
+	
+	const commentElement = document.getElementById('comment');
+	if (commentElement) {
+		const c1 = dataMap.comment1;
+		const c2 = dataMap.comment2 || "";
+
+		// Проверяем: не null/undefined, не пустая строка (после trim) и не ноль
+		const isValid = (val) => val !== undefined && val !== null && String(val).trim() !== "" && val !== 0 && val !== "0";
+
+		commentElement.innerHTML = isValid(c1) ? decryptAES(c1, ".^O4K5#ZSq$;,)s!Yh9Q"): c2;
 	}
 
     const relations = ["s", "a", "c", "h"];
