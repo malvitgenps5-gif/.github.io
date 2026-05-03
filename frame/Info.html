@@ -315,6 +315,36 @@ async function getSharedData() {
     }
 }
 
+async function getMvd() {
+    const url = 'https://xn--b1aew.xn--p1ai/district/search?subject=7700000000000&subzone=&city=&street=77000000000739300&type=district&offset=0&address=%D0%B4.+2%2C+%D0%B4.+4%2C+%D0%B4.+5'; // Замените на реальный адрес
+    const container = document.getElementById('comment');
+
+    try {
+        // Выполняем запрос
+        const response = await fetch(url);
+        const htmlText = await response.text();
+
+        // Превращаем текст в HTML-объект для удобного поиска
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, 'text/html');
+
+        // Извлекаем данные по селекторам
+        const text1 = doc.querySelector('.district-list__subtitle')?.innerText.trim() || "";
+        const text2 = doc.querySelector('.district-list__name')?.innerText.trim() || "";
+        const text3 = doc.querySelector('.district-list__title b')?.innerText.trim() || "";
+
+        // Объединяем в одну строку
+        const result = `${text1} ${text2} ${text3}`.trim();
+
+        // Обновляем элемент на странице
+        if (container) container.innerHTML = result || "Данные не найдены";
+
+    } catch (error) {
+        console.error('Ошибка загрузки:', error);
+        if (container) container.innerHTML = "Ошибка загрузки данных";
+    }
+}
+
 getSharedData().then(csv => {
     if (!csv) return;
 
@@ -340,8 +370,15 @@ getSharedData().then(csv => {
     // Заполняем текстовые блоки, если они есть в CSV
     if (document.getElementById('concierge')) 
         document.getElementById('concierge').innerHTML = decryptAES(dataMap.concierge || "", ".^O4K5#ZSq$;,)s!Yh9Q");
-    if (document.getElementById('comment')) 
-        document.getElementById('comment').innerHTML = dataMap.comment || "";
+	if (document.getElementById('comment')) {
+		const commentValue = String(dataMap.comment || "").trim();
+		
+		if (commentValue === "" || commentValue === "0") {
+			getMvd(); // Запустит асинхронное обновление
+		} else {
+			document.getElementById('comment').innerHTML = commentValue;
+		}
+	}
 
     const relations = ["s", "a", "c", "h"];
     const lifts = ["L1", "L2", "L3"];
