@@ -44,9 +44,10 @@ html, body {
 
 .left img {
   height: 400px;
-  width: auto;
+  aspect-ratio: 2711 / 540;
   margin: 820px 0;
   transform: rotate(-90deg);
+  flex-shrink: 0;
 }
 
 
@@ -75,22 +76,25 @@ html, body {
 
 .track-x img {
   height: 80%;
+  aspect-ratio: 2711 / 540;
   margin-right: 40px;
+  flex-shrink: 0;
+  will-change: transform;
 }
 
-/* 1 блок */
+/* 1 блок: влево */
 .block1 .track-x {
   animation: scrollLeft 12s linear infinite;
 }
 
-/* 2 блок */
+/* 2 блок: вправо (стартуем с -50% и идем в 0) */
 .block2 .track-x {
   animation: scrollRight 14s linear infinite;
 }
 
-/* 3 блок */
+/* 3 блок: влево, но другая скорость */
 .block3 .track-x {
-  animation: scrollLeftOffset 16s linear infinite;
+  animation: scrollLeft 20s linear infinite; /* Сделал медленнее для разнообразия */
 }
 
 /* АНИМАЦИИ */
@@ -100,13 +104,13 @@ html, body {
 }
 
 @keyframes scrollLeft {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 
 @keyframes scrollRight {
-  0% { transform: translateX(-50%); }
-  100% { transform: translateX(0); }
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
 }
 
 @keyframes scrollLeftOffset {
@@ -135,28 +139,22 @@ html, body {
 
     <div class="block block1">
       <div class="track-x">
-        <img src="../svg/dmit2.svg">
-        <img src="../svg/dmit2.svg">
-        <img src="../svg/dmit2.svg">
-        <img src="../svg/dmit2.svg">
+        <img src="../svg/dmit2.svg"><img src="../svg/dmit2.svg">
+        <img src="../svg/dmit2.svg"><img src="../svg/dmit2.svg">
       </div>
     </div>
 
     <div class="block block2">
       <div class="track-x">
-        <img src="../svg/dmit2.svg">
-        <img src="../svg/dmit2.svg">
-        <img src="../svg/dmit2.svg">
-        <img src="../svg/dmit2.svg">
+        <img src="../svg/dmit2.svg"><img src="../svg/dmit2.svg">
+        <img src="../svg/dmit2.svg"><img src="../svg/dmit2.svg">
       </div>
     </div>
 
     <div class="block block3">
       <div class="track-x">
-        <img src="../svg/dmit2.svg">
-        <img src="../svg/dmit2.svg">
-        <img src="../svg/dmit2.svg">
-        <img src="../svg/dmit2.svg">
+        <img src="../svg/dmit2.svg"><img src="../svg/dmit2.svg">
+        <img src="../svg/dmit2.svg"><img src="../svg/dmit2.svg">
       </div>
     </div>
 
