@@ -46,7 +46,8 @@ html, body {
   height: 400px;
   aspect-ratio: 2711 / 540;
   margin: 820px 0;
-  transform: rotate(-90deg);
+  /* Объединяем поворот и 3D ускорение в одну строку */
+  transform: rotate(-90deg) translateZ(0); 
   flex-shrink: 0;
 }
 
@@ -75,10 +76,12 @@ html, body {
 }
 
 .track-x img {
-  height: 80%;
-  aspect-ratio: 2711 / 540;
+  width: auto;
+  height: 512px;
   margin-right: 40px;
-  flex-shrink: 0;
+  /* Добавляем ускорение сюда, не перезаписывая другие свойства */
+  transform: translateZ(0);
+  backface-visibility: hidden;
   will-change: transform;
 }
 
@@ -127,10 +130,10 @@ html, body {
   <!-- ЛЕВАЯ -->
   <div class="left">
     <div class="left-track">
-      <img src="../svg/dmit2.svg">
-      <img src="../svg/dmit2.svg"> 
-	  <img src="../svg/dmit2.svg"> 
-	  <img src="../svg/dmit2.svg"> 
+      <img src="../svg/dmit2_2.svg">
+      <img src="../svg/dmit2_2.svg"> 
+	  <img src="../svg/dmit2_2.svg"> 
+	  <img src="../svg/dmit2_2.svg"> 
     </div>
   </div>
 
@@ -139,22 +142,22 @@ html, body {
 
     <div class="block block1">
       <div class="track-x">
-        <img src="../svg/dmit2.svg"><img src="../svg/dmit2.svg">
-        <img src="../svg/dmit2.svg"><img src="../svg/dmit2.svg">
+        <img src="../svg/dmit2_2.svg"><img src="../svg/dmit2_2.svg">
+        <img src="../svg/dmit2_2.svg"><img src="../svg/dmit2_2.svg">
       </div>
     </div>
 
     <div class="block block2">
       <div class="track-x">
-        <img src="../svg/dmit2.svg"><img src="../svg/dmit2.svg">
-        <img src="../svg/dmit2.svg"><img src="../svg/dmit2.svg">
+        <img src="../svg/dmit2_2.svg"><img src="../svg/dmit2_2.svg">
+        <img src="../svg/dmit2_2.svg"><img src="../svg/dmit2_2.svg">
       </div>
     </div>
 
     <div class="block block3">
       <div class="track-x">
-        <img src="../svg/dmit2.svg"><img src="../svg/dmit2.svg">
-        <img src="../svg/dmit2.svg"><img src="../svg/dmit2.svg">
+        <img src="../svg/dmit2_2.svg"><img src="../svg/dmit2_2.svg">
+        <img src="../svg/dmit2_2.svg"><img src="../svg/dmit2_2.svg">
       </div>
     </div>
 
