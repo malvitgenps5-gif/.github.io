@@ -1,72 +1,93 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
 <meta charset="UTF-8">
 <title>ЖК Дмитриевский</title>
-<link rel="preload" href="../svg/dmit8_1.svg" as="image" type="image/svg+xml">
-<link rel="preload" href="../svg/dmit8_2.svg" as="image" type="image/svg+xml">  
 <style>
-html, body {
-  margin: 0;
-  padding: 0;
-  background: black;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
+  html, body {
+    margin: 0; padding: 0;
+    background: black;
+    height: 100vh;
+    overflow: hidden;
+  }
 
-.screen {
-  width: 1080px;
-  height: 1920px;
-  /*position: relative;*/
-  overflow: hidden;
-  background: black;
-}
+  .screen {
+    width: 1080px;
+    height: 1920px;
+    position: relative;
+    background: black;
+    margin: 0 auto;
+  }
 
-.screen img {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  max-width: 100%;
-  max-height: 100%;
-  transform: translate(-50%, -50%);
-}
+  /* Общий контейнер, где логотипы лежат друг на друге */
+  .logo-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1024px;
+    height: 1024px;
+    transform: translate(-50%, -50%);
+  }
 
-/* Слева направо */
-.reveal-logo1 {
-  animation: revealLeft 5s ease-in-out forwards;
-  width: 1024px;
-  height: auto; /* Чтобы не искажать пропорции */
-}
+  /* Базовый стиль обертки-шторки */
+  .wrapper {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    overflow: hidden; /* Скрывает часть картинки */
+    transform: translateZ(0);
+  }
 
-/* Справа налево */
-.reveal-logo2 {
-  animation: revealRight 5s ease-in-out forwards;
-  width: 1024px;
-  height: auto; /* Чтобы не искажать пропорции */
-}
+  .logo {
+    width: 1024px;
+    height: 1024px;
+    position: absolute;
+    top: 0;
+    display: block;
+  }
 
-@keyframes revealLeft {
-  from { clip-path: inset(0 100% 0 0); } /* скрыт справа */
-  to   { clip-path: inset(0 0 0 0); }
-}
+  /* ЛЕВАЯ ШТОРКА: крепится слева, растет вправо */
+  .reveal-left {
+    left: 0;
+    width: 0;
+    animation: revealWidth 5s ease-in-out forwards;
+  }
+  .reveal-left .logo {
+    left: 0; /* Картинка прижата к левому краю и не движется */
+  }
 
-@keyframes revealRight {
-  from { clip-path: inset(0 0 0 100%); } /* скрыт слева */
-  to   { clip-path: inset(0 0 0 0); }
-}
+  /* ПРАВАЯ ШТОРКА: крепится справа, растет влево */
+  .reveal-right {
+    right: 0;
+    width: 0;
+    animation: revealWidth 5s ease-in-out forwards;
+  }
+  .reveal-right .logo {
+    right: 0; /* Картинка прижата к правому краю и не движется */
+  }
+
+  @keyframes revealWidth {
+    from { width: 0; }
+    to   { width: 100%; } /* Раскрываем контейнер на всю ширину */
+  }
 </style>
 </head>
-
 <body>
 
 <div class="screen">
-<img src="../svg/dmit8_2.svg" class="reveal-logo1" alt="Логотип">
-<img src="../svg/dmit8_1.svg" class="reveal-logo2" alt="Логотип">
- 
+  <div class="logo-container">
+    
+    <!-- Проявляется слева направо -->
+    <div class="wrapper reveal-left">
+      <img src="../svg/dmit8_2.svg" class="logo">
+    </div>
 
+    <!-- Проявляется справа налево -->
+    <div class="wrapper reveal-right">
+      <img src="../svg/dmit8_1.svg" class="logo">
+    </div>
+
+  </div>
 </div>
 
 </body>
