@@ -1,12 +1,12 @@
 <!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>ЖК Дмитриевский</title></head>
 
 <style>
-	
+
 html {
   -webkit-text-size-adjust: none; /* Запрет автоувеличения */
   text-size-adjust: none;
 }
-	
+
 body{
 margin:0;
 font-family:Segoe UI,Arial;
@@ -32,29 +32,34 @@ justify-content:center;
 padding:30px;
 }
 
-.cell{
-width:90px;
-height:70px;
-border-radius:10px;
-display:flex;
-flex-direction:column;
-align-items:center;
-justify-content:center;
-transition:0.3s;
-box-shadow:0 4px 10px rgba(0,0,0,0.4);
-position: relative;
+.cell {
+    width: 90px;
+    height: 70px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    /* Центрируем содержимое по горизонтали */
+    align-items: center; 
+    /* Распределяем число и кружки по вертикали */
+    justify-content: flex-start; 
+    padding-top: 6px; /* Задает точный отступ для числа сверху */
+    box-sizing: border-box; /* Чтобы padding не увеличил высоту ячейки */
+    transition: 0.3s;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    position: relative;
 }
 
 .cell:hover{
 transform:scale(1.05);
 }
 
-.number{
-font-size:36px;
-font-weight:bold;
-margin-bottom:6px;
-position: absolute;
-top:-2px;
+.number {
+    font-size: 36px;
+    font-weight: bold;
+    line-height: 1; /* Схлопывает лишнее пространство вокруг цифр */
+    margin: 0;      /* Убираем лишние отступы */
+    position: static; /* Возвращаем в нормальный поток */
+    -webkit-text-size-adjust: none; /* Запрет Android увеличивать шрифт */
 }
 
 .green{
@@ -72,12 +77,12 @@ font-weight:bold;
 /*margin-bottom:6px;*/
 color:#333;
 }
-.circles{
 
-display:flex;
-gap:12px;
-  position: absolute;
-  top: 46px;          /* Смещение вниз от верхнего края контейнера */  
+.circles {
+    display: flex;
+    gap: 12px;
+    position: absolute;
+    bottom: 8px; /* Прижимаем кружки к нижнему краю, так надежнее */
 }
 
 .circle{
