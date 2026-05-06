@@ -1,119 +1,107 @@
 <!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>ЖК Дмитриевский</title></head>
 
 <style>
-
 html {
-  -webkit-text-size-adjust: none; /* Запрет автоувеличения */
+  -webkit-text-size-adjust: none;
   text-size-adjust: none;
 }
 
-body{
-margin:0;
-font-family:Segoe UI,Arial;
-background:#0f172a;
-color:white;
+body {
+  margin: 0;
+  /* Добавили системный шрифт Android (Roboto) в приоритет для стабильности */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #0f172a;
+  color: white;
 }
 
-.header{
-padding:10px;
-text-align:center;
-font-size:26px;
-font-weight:600;
-letter-spacing:1px;
-background:#111827;
-box-shadow:0 2px 10px rgba(0,0,0,0.5);
+.header {
+  padding: 10px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  background: #111827;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
 }
 
-#grid{
-display:grid;
-grid-template-columns: repeat(10, 90px);
-gap:12px;
-justify-content:center;
-padding:30px;
+#grid {
+  display: grid;
+  grid-template-columns: repeat(10, 90px);
+  gap: 12px;
+  justify-content: center;
+  padding: 30px;
 }
 
 .cell {
-    width: 90px;
-    height: 70px;
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    /* Центрируем содержимое по горизонтали */
-    align-items: center; 
-    /* Распределяем число и кружки по вертикали */
-    justify-content: flex-start; 
-    padding-top: 5px; /* Задает точный отступ для числа сверху */
-    box-sizing: border-box; /* Чтобы padding не увеличил высоту ячейки */
-    transition: 0.3s;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-    position: relative;
+  width: 90px;
+  height: 70px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* Теперь по умолчанию центр */
+  transition: 0.3s;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  position: relative;
+  box-sizing: border-box;
 }
 
-.cell:hover{
-transform:scale(1.05);
+.cell:hover {
+  transform: scale(1.05);
 }
 
+/* Настройки для обычных чисел */
 .number {
-    font-size: 36px;
-    font-weight: bold;
-    line-height: 1; /* Схлопывает лишнее пространство вокруг цифр */
-    margin: 0;      /* Убираем лишние отступы */
-    position: static; /* Возвращаем в нормальный поток */
-    -webkit-text-size-adjust: none; /* Запрет Android увеличивать шрифт */
+  font-size: 36px;
+  font-weight: bold;
+  line-height: 1;
+  margin: 0;
+  position: relative;
+  top: -12px; /* Компенсируем место для кружков снизу */
 }
 
-.green{
-background:#16a34a;
+.green { background: #16a34a; }
+.red { background: #dc2626; }
 
-}
-
-.red{
-background:#dc2626;
-}
+/* Настройки для золотых ячеек */
 .gold {
-background:#ffd700;
-font-size:36px;
-font-weight:bold;
-/*margin-bottom:6px;*/
-color:#333;
+  background: #ffd700;
+  color: #333;
+  font-size: 36px;
+  font-weight: bold;
+  line-height: 1;
+  /* В золотых ячейках нет кружков, поэтому justify-content:center сработает идеально */
 }
 
 .circles {
-    display: flex;
-    gap: 12px;
-    position: absolute;
-    bottom: 8px; /* Прижимаем кружки к нижнему краю, так надежнее */
+  display: flex;
+  gap: 12px;
+  position: absolute;
+  bottom: 6px; /* Фиксируем кружки строго внизу */
 }
 
-.circle{
-width:18px;
-height:18px;
-border-radius:50%;
-background:#374151;
-box-shadow:0 0 5px rgba(0,0,0,0.6);
-
+.circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #374151;
+  box-shadow: 0 0 5px rgba(0,0,0,0.6);
 }
 
-.circle.green{
-background:#22c55e;
-}
+.circle.green { background: #22c55e; }
+.circle.red { background: #ef4444; }
 
-.circle.red{
-background:#ef4444;
-}
-
-.footer{
-text-align:center;
-padding:10px;
-font-size:12px;
-color:#9ca3af;
+.footer {
+  text-align: center;
+  padding: 10px;
+  font-size: 12px;
+  color: #9ca3af;
 }
 
 .pust {
-  width:90px;
-  height:70px;
+  width: 90px;
+  height: 70px;
 }
-
 </style>
 
 <body>
