@@ -195,27 +195,29 @@ background: black;
 }
 	
 .image-container {
+    position: relative;
+    display: inline-block;
     width: 184px;
     height: 184px;
 }
 	
 .image-container:has(img.your-class) {
-  position: relative;
-  display: inline-block;
-  z-index: 1;
+    position: relative;
+    z-index: 1;
 }
 
 .image-container:has(img.your-class)::before {
-  content: "";
-  position: absolute;
-  top: 5px;  /* Смещение вниз */
-  left: 5px; /* Смещение вправо */
-  width: 90%;
-  height: 90%;
-  background-color: white;
-  z-index: -1; /* Уводит блок за картинку */
-  border-radius: 20px;
+    content: "";
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 90%;
+    height: 90%;
+    background: #fff;
+    border-radius: 20px;
+    z-index: 0;
 }
+	
 .info-block:nth-child(2) {
  height:340px;
 }
