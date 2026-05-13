@@ -151,7 +151,7 @@
                 const current = row[currentIdx]?.trim() || "0";
                 
                 if (id) {
-                    newColors[id] = (current === "1") ? '#16a34a' : '#dc2626';
+                    newColors[id] = (current === "1") ? '#0f0' : '#f00';
                 }
             });
 
@@ -174,7 +174,7 @@
 
         for (let i = 0; i < drops.length; i++) {
             const roomId = Math.floor(Math.random() * 192) + 1;
-            const targetColor = roomColors[roomId] || '#dc2626';
+            const targetColor = roomColors[roomId] || '#f00';
             
             // Включаем параметры свечения для конкретной цифры
             ctx.fillStyle = targetColor;
