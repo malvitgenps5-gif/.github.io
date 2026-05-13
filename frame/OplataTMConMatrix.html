@@ -93,7 +93,7 @@
 
     // --- НАСТРОЙКИ МАТРИЦЫ ---
     const fontSize = 42;          // Крупный размер шрифта
-    const columnSpacing =3;    // Расстояние между столбцами
+    const columnSpacing =2;    // Расстояние между столбцами
     const speedInterval = 45;     // Скорость обновления (выше = медленнее)
 
     // Вычисляем количество колонок
@@ -171,6 +171,9 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.font = fontSize + 'px "VT323", monospace';
+        
+        // ВАЖНО: устанавливаем выравнивание текста по правому краю
+        ctx.textAlign = 'right';
 
         for (let i = 0; i < drops.length; i++) {
             const roomId = Math.floor(Math.random() * 192) + 1;
@@ -181,7 +184,9 @@
             ctx.shadowColor = targetColor; // Свечение в тон цифре
             ctx.shadowBlur = 10;           // Радиус размытия свечения
             
-            const xPosition = i * fontSize * columnSpacing;
+            // Вычисляем позицию X: начинаем справа и шагаем влево
+            // Добавлен небольшой отступ (20px) справа, чтобы цифры не липли к краю рамки
+            const xPosition = canvas.width - (i * fontSize * columnSpacing) - 20;
             const yPosition = drops[i] * fontSize;
             
             ctx.fillText(roomId, xPosition, yPosition);
@@ -192,6 +197,7 @@
             drops[i]++;
         }
     }
+
 
     // Ждем полной загрузки шрифта браузером перед стартом анимации
     document.fonts.ready.then(() => {
