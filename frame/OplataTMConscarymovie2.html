@@ -1,28 +1,27 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ЖК Дмитриевский</title>
     <style>
-		@font-face {
-			font-family: 'AlehoScribble';
-			/* Сначала ищем в системе, затем загружаем файлы */
-			src: local('Aleho Scribble Outer'), 
-				 local('AlehoScribble'),
-				 url('aleho-scribble-outer.woff2') format('woff2'),
-				 url('aleho-scribble-outer.otf') format('opentype');
-			font-weight: normal;
-			font-style: normal;
-			font-display: block; /* Изменили на block, чтобы жестко запретить системный шрифт */
-		}
+        @font-face {
+            font-family: 'Avengeance';
+            /* Шрифт загружается из той же папки, где лежит HTML-страница */
+            src: url('avengeance-heroic-avenger.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+            font-display: block; /* Запрещает показ системного шрифта до полной загрузки */
+        }
 
         html, body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            background-color: #F4F4F6; /* Возвращен черный фон */
+            background-color: #1E3A8A; /* Возвращен черный фон */
             overflow: hidden;
             display: flex;
             justify-content: center;
@@ -32,20 +31,44 @@
         #viewport {
             width: 1080px;
             height: 1920px;
-            background-color: #F4F4F6; /* Возвращен черный фон */
+            background-color: #1E3A8A; /* Возвращен черный фон */
             overflow: hidden;
             position: relative;
             transform-origin: center center;
             flex-shrink: 0;
         }
+
+        .header {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            padding: 10px;
+            text-align: center;
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            background: rgba(0, 0, 0, 0.85); /* Возвращена черная подложка */
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+            color: #DD6B20; /* Надпись остается БЕЛОЙ */
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            box-sizing: border-box;
+            border-bottom: 2px solid #500;
+        }
+
+
     </style>
 </head>
 <body>
-<div style="font-family: 'AlehoScribble'; opacity: 0.01; position: absolute; top: -999px; left: -999px;">0123456789</div><div id="viewport">
+<div style="font-family: 'Avengeance'; opacity: 0.01; position: absolute; top: -999px; left: -999px;">0123456789</div>
+<div id="viewport">    
     <canvas id="matrix" width="1080" height="1920"></canvas>
 </div>
 
 <script>
+
+
     const canvas = document.getElementById('matrix');
     const ctx = canvas.getContext('2d');
 
@@ -158,38 +181,36 @@
     }
 
     function drawNumber(id) {
-        // Очищаем холст ЧЕРНЫМ цветом
+        // Очищаем холст черным цветом
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 0;
-        ctx.fillStyle = '#F4F4F6'; // Изменено на черный
+        ctx.fillStyle = '#1E3A8A';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         if (id === null) return;
 
-        // Определяем размер шрифта в зависимости от количества цифр в ID
+        // Определение динамического размера шрифта
         let dynamicFontSize = 180;
 
         if (id >= 0 && id <= 9) {
-            dynamicFontSize = 1200;
+            dynamicFontSize = 1200; // Для Montserrat 1200px может быть слишком огромным, если не помещается — уменьшите до 800-900
         } else if (id >= 10 && id <= 99) {
-            dynamicFontSize = 1000;
+            dynamicFontSize = 1000;  
         } else if (id >= 100 && id <= 999) {
-            dynamicFontSize = 700;
+            dynamicFontSize = 850;  
         }
 
-        // Применяем вычисленный динамический размер шрифта
-        ctx.font = dynamicFontSize + 'px "AlehoScribble", Impact, sans-serif';
+        // Применяем новый шрифт Montserrat к холсту Canvas
+        ctx.font = '700 ' + dynamicFontSize + 'px "Avengeance", Impact, sans-serif';
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'center';
 
-        // Рисуем одну цифру строго по центру БЕЛЫМ цветом
-        ctx.fillStyle = '#E53E3E';      // Текст остается белым
-        ctx.shadowColor = '#E53E3E';     // Свечение остается белым
-        ctx.shadowBlur = 20;             
-        ctx.fillText(id, centerX, centerY);
+        // Рисуем цифру строго по центру белым цветом
+        ctx.fillStyle = '#FB923C';
+        ctx.shadowColor = '#FB923C';
+        ctx.shadowBlur = 20;
+        ctx.fillText(id, centerX -70, centerY);
     }
-
-
  // Вместо одиночного вызова updateData(); пишем эту проверку:
 if (document.fonts) {
     // Ждем, пока браузер полностью загрузит и применит все шрифты из CSS
