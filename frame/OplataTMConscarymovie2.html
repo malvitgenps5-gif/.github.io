@@ -7,12 +7,14 @@
     <style>
 		@font-face {
 			font-family: 'AlehoScribble';
-			/* Браузер проверяет форматы по очереди сверху вниз */
-			src: url('Aleho_Scribble_Outer.woff2') format('woff2'),
-				 url('Aleho_Scribble_Outer.otf') format('opentype');
+			/* Сначала ищем в системе, затем загружаем файлы */
+			src: local('Aleho Scribble Outer'), 
+				 local('AlehoScribble'),
+				 url('aleho-scribble-outer.woff2') format('woff2'),
+				 url('aleho-scribble-outer.otf') format('opentype');
 			font-weight: normal;
 			font-style: normal;
-			font-display: swap; /* Позволяет браузеру сразу рисовать текст временным шрифтом, пока качается основной */
+			font-display: block; /* Изменили на block, чтобы жестко запретить системный шрифт */
 		}
 
         html, body {
