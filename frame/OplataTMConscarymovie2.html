@@ -22,7 +22,7 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            background-color: #000000; /* Возвращен черный фон */
+            background-color: #F4F4F6; /* Возвращен черный фон */
             overflow: hidden;
             display: flex;
             justify-content: center;
@@ -32,7 +32,7 @@
         #viewport {
             width: 1080px;
             height: 1920px;
-            background-color: #000000; /* Возвращен черный фон */
+            background-color: #F4F4F6; /* Возвращен черный фон */
             overflow: hidden;
             position: relative;
             transform-origin: center center;
@@ -161,7 +161,7 @@
         // Очищаем холст ЧЕРНЫМ цветом
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 0;
-        ctx.fillStyle = '#000000'; // Изменено на черный
+        ctx.fillStyle = '#F4F4F6'; // Изменено на черный
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         if (id === null) return;
@@ -183,8 +183,8 @@
         ctx.textAlign = 'center';
 
         // Рисуем одну цифру строго по центру БЕЛЫМ цветом
-        ctx.fillStyle = '#ffffff';      // Текст остается белым
-        ctx.shadowColor = '#ffffff';     // Свечение остается белым
+        ctx.fillStyle = '#E53E3E';      // Текст остается белым
+        ctx.shadowColor = '#E53E3E';     // Свечение остается белым
         ctx.shadowBlur = 20;             
         ctx.fillText(id, centerX, centerY);
     }
