@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ЖК Дмитриевский</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="googleapis.com" rel="stylesheet">
+    
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #viewport {
+            width: 1080px;
+            height: 1920px;
+            background-color: #000;
+            overflow: hidden;
+            position: relative;
+            transform-origin: center center;
+            flex-shrink: 0;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .header {
+            font-family: Segoe UI, Arial, sans-serif;
+            padding: 10px;
+            text-align: center;
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            background: black;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            color: #0f0;
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+<div id="viewport">
+    <div class="header">
+        Консьерж НК3 <span id="current-month"></span>
+    </div>
+    <canvas id="matrix" width="1080" height="1920"></canvas>
+</div>
+
+<script>
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); 
+    const year = now.getFullYear();
+    document.getElementById('current-month').innerText = `${month}/${year}`;
+
+    const viewport = document.getElementById('viewport');
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+
+    const fontSize = 42;          
+    const columnSpacing = 2;    
+    const speedInterval = 45;     
+
+    const columns = Math.floor(canvas.width / (fontSize * columnSpacing));
+    let drops = new Array(columns).fill(1);
+
+    // Списки комнат, разделенные по статусам для быстрого выбора
+    let greenRooms = [];
+    let redRooms = [];
+
+    async function getSharedData() {
+        const CSV_URL =  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv'; 
+        const CACHE_KEY = 'sheet_data';
+        const TIMESTAMP_KEY = 'sheet_timestamp';
+        const TTL = 5 * 60 * 1000;
+
+        const cached = localStorage.getItem(CACHE_KEY);
+        const lastUpdate = localStorage.getItem(TIMESTAMP_KEY);
+        const currentNow = Date.now();
+
+        if (cached && lastUpdate && (currentNow - lastUpdate < TTL)) {
+            return cached;
+        }
+
+        try {
+            console.log('Фрейм делает сетевой запрос...');
+            const response = await fetch(CSV_URL);
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const data = await response.text();
+            localStorage.setItem(CACHE_KEY, data);
+            localStorage.setItem(TIMESTAMP_KEY, currentNow.toString());
+            return data;
+        } catch (err) {
+            console.error('Ошибка загрузки:', err);
+            return cached || "";
+        }
+    }
+
+    function updateData() {
+        getSharedData().then(csv => {
+            if (!csv) return;
+
+            // Разделяем на строки и убираем пустые
+            const rows = csv.split(/\r?\n/).filter(row => row.trim() !== "");
+            
+            // Получаем заголовки из первой строки
+            const headers = rows[0].split(",").map(h => h.trim().toLowerCase());
+            
+            const idIdx = headers.indexOf("id");
+            const currentIdx = headers.indexOf("current");
+
+            const newGreen = [];
+            const newRed = [];
+            
+            // Обрабатываем строки с данными (пропуская заголовки)
+            rows.slice(1).forEach(rowStr => {
+                const row = rowStr.split(",");
+                const id = row[idIdx]?.trim();
+                const current = row[currentIdx]?.trim() || "0";
+                
+                if (id) {
+                    // Условие фильтрации: исключаем "0" и ID, которые начинаются на "i" или "I"
+                    const isZero = id === "0";
+                    const startsWithI = id.toLowerCase().startsWith('i');
+
+                    if (!isZero && !startsWithI) {
+                        if (current === "1") {
+                            newGreen.push(id);
+                        } else {
+                            newRed.push(id);
+                        }
+                    }
+                }
+            });
+
+            // Заполняем рабочие массивы очищенными данными
+            greenRooms = newGreen.length ? newGreen : Array.from({length: 96}, (_, i) => String(i * 2 + 2));
+            redRooms = newRed.length ? newRed : Array.from({length: 96}, (_, i) => String(i * 2 + 1));
+
+            console.log(`Данные обновлены после фильтрации. Зеленых: ${greenRooms.length}, Красных: ${redRooms.length}`);
+        });
+    }
+
+
+    updateData();
+    setInterval(updateData, 10000); 
+
+    function draw() {
+        ctx.shadowBlur = 0; 
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.font = fontSize + 'px "VT323", monospace';
+        ctx.textAlign = 'right';
+
+        for (let i = 0; i < drops.length; i++) {
+            let roomId;
+            let targetColor;
+
+            // Логика чередования: четные индексы i — зеленые, нечетные — красные
+            if (i % 2 === 0) {
+                targetColor = '#0f0';
+                roomId = greenRooms[Math.floor(Math.random() * greenRooms.length)] || "—";
+            } else {
+                targetColor = '#f00';
+                roomId = redRooms[Math.floor(Math.random() * redRooms.length)] || "—";
+            }
+            
+            ctx.fillStyle = targetColor;
+            ctx.shadowColor = targetColor; 
+            ctx.shadowBlur = 10;           
+            
+            const xPosition = canvas.width - (i * fontSize * columnSpacing) - 20;
+            const yPosition = drops[i] * fontSize;
+            
+            ctx.fillText(roomId, xPosition, yPosition);
+
+            if (yPosition > canvas.height && Math.random() > 0.98) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+    }
+
+    document.fonts.ready.then(() => {
+        setInterval(draw, speedInterval);
+    });
+
+    function resizeViewport() {
+        const targetWidth = 1080;
+        const targetHeight = 1920;
+        
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        
+        const scale = Math.min(windowWidth / targetWidth, windowHeight / targetHeight);
+        viewport.style.transform = `scale(${scale})`;
+    }
+
+    window.addEventListener('resize', resizeViewport);
+    resizeViewport();
+</script>
+</body>
+</html>
