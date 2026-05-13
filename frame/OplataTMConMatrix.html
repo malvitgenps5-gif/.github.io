@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ЖК Дмитриевский</title>
+    <style>
+        /* Подключение оригинального шрифта Матрицы */
+		@font-face {
+			font-family: 'MatrixCode';
+			src: url('cdnfonts.com') format('woff');
+			font-weight: normal;
+			font-style: normal;
+			font-display: swap;
+		}
+
+        /* Обнуление отступов и скрытие скроллбаров */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Контейнер строго фиксированного вертикального разрешения */
+        #viewport {
+            width: 1080px;
+            height: 1920px;
+            background-color: #000;
+            overflow: hidden;
+            position: relative;
+            transform-origin: center center;
+            flex-shrink: 0;
+        }
+
+        /* Холст заполняет только область контейнера */
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Стили для заголовка */
+        .header {
+            font-family: Segoe UI, Arial;
+            padding: 10px;
+            text-align: center;
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            background: black;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            color: #0f0;
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+<div id="viewport">
+    <div class="header">
+        Оплата консьержа НК3 <span id="current-month"></span>
+    </div>
+    <div id="grid"></div>
+    <canvas id="matrix" width="1080" height="1920"></canvas>
+</div>
+
+<script>
+    // --- ДИНАМИЧЕСКИЙ МЕСЯЦ И ГОД ---
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); 
+    const year = now.getFullYear();
+    document.getElementById('current-month').innerText = `${month}/${year}`;
+
+    const viewport = document.getElementById('viewport');
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+
+    // --- НАСТРОЙКИ МАТРИЦЫ ---
+    const fontSize = 42;          // Крупный размер шрифта
+    const columnSpacing =3;    // Расстояние между столбцами
+    const speedInterval = 45;     // Скорость обновления (выше = медленнее)
+
+    // Вычисляем количество колонок
+    const columns = Math.floor(canvas.width / (fontSize * columnSpacing));
+    let drops = new Array(columns).fill(1);
+
+    let roomColors = {}; 
+
+    // --- ВАША ФУНКЦИЯ КЭШИРОВАНИЯ ---
+    async function getSharedData() {
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv'; // 
+        const CACHE_KEY = 'sheet_data';
+        const TIMESTAMP_KEY = 'sheet_timestamp';
+        const TTL = 5 * 60 * 1000;
+
+        const cached = localStorage.getItem(CACHE_KEY);
+        const lastUpdate = localStorage.getItem(TIMESTAMP_KEY);
+        const currentNow = Date.now();
+
+        if (cached && lastUpdate && (currentNow - lastUpdate < TTL)) {
+            return cached;
+        }
+
+        try {
+            console.log('Фрейм делает сетевой запрос...');
+            const response = await fetch(CSV_URL);
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const data = await response.text();
+            localStorage.setItem(CACHE_KEY, data);
+            localStorage.setItem(TIMESTAMP_KEY, currentNow.toString());
+            return data;
+        } catch (err) {
+            console.error('Ошибка загрузки:', err);
+            return cached || "";
+        }
+    }
+
+    // --- ОБРАБОТКА ДАННЫХ ---
+    function updateData() {
+        getSharedData().then(csv => {
+            if (!csv) return;
+
+            const rows = csv.split(/\r?\n/).filter(row => row.trim() !== "");
+            const headers = rows[0].split(",").map(h => h.trim().toLowerCase());
+            
+            const idIdx = headers.indexOf("id");
+            const currentIdx = headers.indexOf("current");
+
+            const newColors = {};
+            
+            rows.slice(1).forEach(rowStr => {
+                const row = rowStr.split(",");
+                const id = row[idIdx]?.trim();
+                const current = row[currentIdx]?.trim() || "0";
+                
+                if (id) {
+                    newColors[id] = (current === "1") ? '#0f0' : '#f00';
+                }
+            });
+
+            roomColors = newColors;
+            console.log('Данные обновлены. Всего комнат в базе:', Object.keys(roomColors).length);
+        });
+    }
+
+    updateData();
+    setInterval(updateData, 10000); 
+
+    // --- АНИМАЦИЯ МАТРИЦЫ ---
+    function draw() {
+        // Очищаем слой с эффектом затухания, отключая свечение для фона
+        ctx.shadowBlur = 0; 
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.font = fontSize + 'px "MatrixCode", monospace';
+
+        for (let i = 0; i < drops.length; i++) {
+            const roomId = Math.floor(Math.random() * 192) + 1;
+            const targetColor = roomColors[roomId] || '#f00';
+            
+            // Включаем параметры свечения для конкретной цифры
+            ctx.fillStyle = targetColor;
+            ctx.shadowColor = targetColor; // Свечение в тон цифре
+            ctx.shadowBlur = 10;           // Радиус размытия свечения
+            
+            const xPosition = i * fontSize * columnSpacing;
+            const yPosition = drops[i] * fontSize;
+            
+            ctx.fillText(roomId, xPosition, yPosition);
+
+            if (yPosition > canvas.height && Math.random() > 0.98) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+    }
+
+    // Ждем полной загрузки шрифта браузером перед стартом анимации
+    document.fonts.ready.then(() => {
+        setInterval(draw, speedInterval);
+    });
+
+    // --- АВТОМАТИЧЕСКОЕ МАСШТАБИРОВАНИЕ КАНВАСА ПОД ЭКРАН ---
+    function resizeViewport() {
+        const targetWidth = 1080;
+        const targetHeight = 1920;
+        
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        
+        const scale = Math.min(windowWidth / targetWidth, windowHeight / targetHeight);
+        viewport.style.transform = `scale(${scale})`;
+    }
+
+    window.addEventListener('resize', resizeViewport);
+    resizeViewport();
+</script>
+</body>
+</html>
