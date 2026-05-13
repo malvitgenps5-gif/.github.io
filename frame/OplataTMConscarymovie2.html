@@ -6,14 +6,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ЖК Дмитриевский</title>
-    <style>
-        @font-face {
-            font-family: 'Avengeance';
-            /* Шрифт загружается из той же папки, где лежит HTML-страница */
-            src: url('avengeance-heroic-avenger.woff2') format('woff2');
+ <style>
+		@font-face {
+            font-family: 'Forresta';
+            /* Браузер проверяет форматы по очереди. Название файла приведено к нижнему регистру без пробелов */
+            src: url('forresta-personal-use.woff') format('woff'),
+                 url('forresta-personal-use.ttf') format('truetype'),
+                 url('forresta-personal-use.otf') format('opentype');
             font-weight: normal;
             font-style: normal;
-            font-display: block; /* Запрещает показ системного шрифта до полной загрузки */
+            font-display: block; /* Предотвращает появление стандартного шрифта во время загрузки */
         }
 
         html, body {
@@ -21,7 +23,7 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            background-color: #1E3A8A; /* Возвращен черный фон */
+            background-color: #000;
             overflow: hidden;
             display: flex;
             justify-content: center;
@@ -31,57 +33,43 @@
         #viewport {
             width: 1080px;
             height: 1920px;
-            background-color: #1E3A8A; /* Возвращен черный фон */
+            background-color: #000;
             overflow: hidden;
             position: relative;
             transform-origin: center center;
             flex-shrink: 0;
         }
 
-        .header {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            padding: 10px;
-            text-align: center;
-            font-size: 26px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            background: rgba(0, 0, 0, 0.85); /* Возвращена черная подложка */
-            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
-            color: #DD6B20; /* Надпись остается БЕЛОЙ */
-            position: absolute;
+        canvas {
+            display: block;
             width: 100%;
+            height: 100%;
+            position: absolute;
             top: 0;
             left: 0;
-            z-index: 10;
-            box-sizing: border-box;
-            border-bottom: 2px solid #500;
+            z-index: 1;
         }
-
 
     </style>
 </head>
 <body>
-<div style="font-family: 'Avengeance'; opacity: 0.01; position: absolute; top: -999px; left: -999px;">0123456789</div>
+<div style="font-family: 'Forresta'; opacity: 0.01; position: absolute; top: -999px; left: -999px;">0123456789</div>
 <div id="viewport">    
     <canvas id="matrix" width="1080" height="1920"></canvas>
 </div>
-
 <script>
-
-
     const canvas = document.getElementById('matrix');
     const ctx = canvas.getContext('2d');
 
     // --- ПАРАМЕТРЫ ОТОБРАЖЕНИЯ ---
-    const fontSize = 700; // Ваш текущий размер шрифта
     let redRoomIds = [];          
+    let currentIdToDraw = null; // Храним ID текущей квартиры для постоянной перерисовки
 
-    // Вычисляем точный центр свободной области под шапкой (высота шапки 180px)
     const centerX = canvas.width / 2;
-    const centerY = 180 + (canvas.height - 180) / 2;
+    const centerY = canvas.height / 2;
 
     async function getSharedData() {
-        const CSV_URL =  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv'; 
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv'; // Ваша ссылка на таблицу
         const CACHE_KEY = 'sheet_data';
         const TIMESTAMP_KEY = 'sheet_timestamp';
         const TTL = 5 * 60 * 1000;
@@ -114,6 +102,8 @@
             if (!csv) return;
 
             const rows = csv.split(/\r?\n/).filter(row => row.trim() !== "");
+            
+            // ИСПРАВЛЕНО: берем первую строку массива rows[0], чтобы разбить её на заголовки
             const headers = rows[0].split(",").map(h => h.trim().toLowerCase());
             
             const idIdx = headers.indexOf("id");
@@ -131,99 +121,121 @@
                 }
             });
 
-            // Сортируем массив по возрастанию ID, чтобы гарантировать строгий порядок отображения
             redRoomIds = currentRedList.sort((a, b) => a - b);
             console.log('Данные обновлены. Красных квартир:', redRoomIds.length);
 
-            // Запускаем переключение на следующий элемент
-            showNextNumber();
+            selectNextNumber();
         });
     }
 
-    function showNextNumber() {
+    function selectNextNumber() {
         if (redRoomIds.length === 0) {
-            // Если красных квартир нет, просто очищаем холст
-            drawNumber(null);
+            currentIdToDraw = null;
             return;
         }
 
-        // Читаем из кэша ID последней показанной квартиры
         const lastShownId = parseInt(localStorage.getItem('last_shown_room_id'));
         let nextIndex = 0;
 
         if (!isNaN(lastShownId)) {
-            // Ищем, на каком индексе в новом массиве находится прошлая квартира
             const lastIndex = redRoomIds.indexOf(lastShownId);
 
             if (lastIndex !== -1) {
-                // Если нашли, берем следующую по порядку
                 nextIndex = lastIndex + 1;
             } else {
-                // Если прошлая квартира пропала из списка «красных»,
-                // ищем ближайшую большую по номеру, чтобы не сбивать общую последовательность
                 nextIndex = redRoomIds.findIndex(id => id > lastShownId);
                 if (nextIndex === -1) nextIndex = 0;
             }
         }
 
-        // Если дошли до конца списка, сбрасываем указатель на начало (зацикливание)
         if (nextIndex >= redRoomIds.length) {
             nextIndex = 0;
         }
 
-        const targetId = redRoomIds[nextIndex];
-        
-        // Сохраняем ID текущей отображаемой квартиры в кэш
-        localStorage.setItem('last_shown_room_id', targetId.toString());
-
-        // Отрисовываем её на холсте
-        drawNumber(targetId);
+        currentIdToDraw = redRoomIds[nextIndex];
+        localStorage.setItem('last_shown_room_id', currentIdToDraw.toString());
     }
 
-    function drawNumber(id) {
-        // Очищаем холст черным цветом
+    // --- ФУНКЦИЯ ГЕНЕРАЦИИ ТВ-ШУМА ---
+    function drawTVStatic() {
+        const grainSize = 6; // Размер одного «зерна» шума в пикселях. Меньше — красивее, больше — быстрее работает.
+        
+        // Рисуем сетку случайных полупрозрачных квадратов поверх черного фона
+        for (let x = 0; x < canvas.width; x += grainSize) {
+            for (let y = 0; y < canvas.height; y += grainSize) {
+                // Случайная яркость от глубокого черного до темно-серого
+                const grayValue = Math.floor(Math.random() * 35); 
+                // Случайная прозрачность для эффекта мерцания
+                const alpha = Math.random() * 0.15; 
+                
+                ctx.fillStyle = `rgba(${grayValue}, ${grayValue}, ${grayValue}, ${alpha})`;
+                ctx.fillRect(x, y, grainSize, grainSize);
+            }
+        }
+    }
+
+    // --- ПОСТОЯННЫЙ АНИМАЦИОННЫЙ ЦИКЛ ОБНОВЛЕНИЯ ЭКРАНА ---
+    function renderLoop() {
+        // 1. Очищаем экран базовым темно-серым цветом (подложка под шум)
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 0;
-        ctx.fillStyle = '#1E3A8A';
+        ctx.fillStyle = '#969aa4';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        if (id === null) return;
+        // 2. Накладываем живой динамический шум ТВ-помех
+        drawTVStatic();
 
-        // Определение динамического размера шрифта
-        let dynamicFontSize = 180;
+        // 3. Если есть активный ID квартиры, рисуем его с глитч-эффектом поверх шума
+        if (currentIdToDraw !== null) {
+            let dynamicFontSize = 180;
+		
+            if (currentIdToDraw >= 0 && currentIdToDraw <= 9) {
+                dynamicFontSize = 1500;
+            } else if (currentIdToDraw >= 10 && currentIdToDraw <= 99) {
+                dynamicFontSize = 1400;
+            } else if (currentIdToDraw >= 100 && currentIdToDraw <= 999) {
+                dynamicFontSize = 1160;
+            }
+            ctx.font = dynamicFontSize + 'px "Forresta", Impact, sans-serif';
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center';
 
-        if (id >= 0 && id <= 9) {
-            dynamicFontSize = 1200; // Для Montserrat 1200px может быть слишком огромным, если не помещается — уменьшите до 800-900
-        } else if (id >= 10 && id <= 99) {
-            dynamicFontSize = 1000;  
-        } else if (id >= 100 && id <= 999) {
-            dynamicFontSize = 850;  
+            // Красный силуэт влево-вниз
+            ctx.fillStyle = '#ff0000';
+            ctx.fillText(currentIdToDraw, centerX - 12, centerY + 4);
+
+            // Бирюзовый силуэт вправо-вверх
+            ctx.fillStyle = '#00ffff'; 
+            ctx.fillText(currentIdToDraw, centerX + 8, centerY - 4);
+
+            // Основной белый текст строго по центру
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(currentIdToDraw, centerX, centerY);
         }
 
-        // Применяем новый шрифт Montserrat к холсту Canvas
-        ctx.font = '700 ' + dynamicFontSize + 'px "Avengeance", Impact, sans-serif';
-        ctx.textBaseline = 'middle';
-        ctx.textAlign = 'center';
-
-        // Рисуем цифру строго по центру белым цветом
-        ctx.fillStyle = '#FB923C';
-        ctx.shadowColor = '#FB923C';
-        ctx.shadowBlur = 20;
-        ctx.fillText(id, centerX -70, centerY);
+        // Запрашиваем следующий кадр анимации (работает на частоте монитора, обычно 60 FPS)
+        requestAnimationFrame(renderLoop);
     }
- // Вместо одиночного вызова updateData(); пишем эту проверку:
-if (document.fonts) {
-    // Ждем, пока браузер полностью загрузит и применит все шрифты из CSS
-    document.fonts.ready.then(function() {
-        console.log('Все веб-шрифты успешно загружены браузером.');
-        updateData();
-    });
-} else {
-    // Запасной вариант для совсем старых браузеров без поддержки document.fonts
-    setTimeout(updateData, 1000); 
-}
-</script>
 
+    function initializeApp() {
+        updateData();
+        //setInterval(updateData, 10000); // Обновляем данные и переключаем ID раз в 10 секунд
+        
+        // Запускаем бесконечный цикл отрисовки шума и текста
+        renderLoop(); 
+    }
+
+    if (document.fonts) {
+        document.fonts.ready.then(function() {
+            console.log('Шрифт Sabotase готов. Запуск анимации шума.');
+            initializeApp();
+        });
+    } else {
+        window.onload = function() {
+            setTimeout(initializeApp, 1000);
+        };
+    }
+</script>
 
 </body>
 </html>
