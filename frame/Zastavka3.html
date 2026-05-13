@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ЖК Дмитриевский</title>
+    <style>
+        @font-face {
+            font-family: 'LeviBrush';
+            src: url('LEVIBRUSH.TTF') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #viewport {
+            width: 1080px;
+            height: 1920px;
+            background-color: #000;
+            overflow: hidden;
+            position: relative;
+            transform-origin: center center;
+            flex-shrink: 0;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .header {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            padding: 20px;
+            text-align: center;
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            background: rgba(0, 0, 0, 0.85);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+            color: #ff2222;
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            box-sizing: border-box;
+            border-bottom: 2px solid #500;
+        }
+    </style>
+</head>
+<body>
+
+<div id="viewport">
+    <div class="header">
+        Оплата консьержа НК3 <span id="current-month"></span>
+    </div>
+    <div id="grid"></div>
+    <canvas id="matrix" width="1080" height="1920"></canvas>
+</div>
+
+<script>
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); 
+    const year = now.getFullYear();
+    document.getElementById('current-month').innerText = `${month}/${year}`;
+
+    const viewport = document.getElementById('viewport');
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+
+    // --- ВАШИ ОБНОВЛЕННЫЕ ПАРАМЕТРЫ ---
+    const fontSize = 150;          
+    const speedInterval = 15;     
+    const maxActiveNumbers = 10;  
+
+    let activeNumbers = [];       
+    let redRoomIds = [];          
+
+    // --- ГЕНЕРАЦИЯ СЕТКИ ДЛЯ ИСКЛЮЧЕНИЯ ПЕРЕКРЫТИЯ ---
+    // Вычисляем количество возможных строк и колонок под размер 150px
+    const gridCols = Math.floor(canvas.width / (fontSize * 1.3)); 
+    const gridRows = Math.floor((canvas.height - 180) / (fontSize * 1.3)); 
+    const cellWidth = canvas.width / gridCols;
+    const cellHeight = (canvas.height - 180) / gridRows;
+
+    // Массив всех доступных ячеек сетки
+    let gridCells = [];
+    for (let c = 0; c < gridCols; c++) {
+        for (let r = 0; r < gridRows; r++) {
+            gridCells.push({ col: c, row: r });
+        }
+    }
+
+    async function getSharedData() {
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv'; 
+        const CACHE_KEY = 'sheet_data';
+        const TIMESTAMP_KEY = 'sheet_timestamp';
+        const TTL = 5 * 60 * 1000;
+
+        const cached = localStorage.getItem(CACHE_KEY);
+        const lastUpdate = localStorage.getItem(TIMESTAMP_KEY);
+        const currentNow = Date.now();
+
+        if (cached && lastUpdate && (currentNow - lastUpdate < TTL)) {
+            return cached;
+        }
+
+        try {
+            console.log('Фрейм делает сетевой запрос...');
+            const response = await fetch(CSV_URL);
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const data = await response.text();
+            localStorage.setItem(CACHE_KEY, data);
+            localStorage.setItem(TIMESTAMP_KEY, currentNow.toString());
+            return data;
+        } catch (err) {
+            console.error('Ошибка загрузки:', err);
+            return cached || "";
+        }
+    }
+
+    function updateData() {
+        getSharedData().then(csv => {
+            if (!csv) return;
+
+            const rows = csv.split(/\r?\n/).filter(row => row.trim() !== "");
+            const headers = rows[0].split(",").map(h => h.trim().toLowerCase());
+            
+            const idIdx = headers.indexOf("id");
+            const currentIdx = headers.indexOf("current");
+
+            const currentRedList = [];
+            
+            rows.slice(1).forEach(rowStr => {
+                const row = rowStr.split(",");
+                const id = parseInt(row[idIdx]?.trim());
+                const current = row[currentIdx]?.trim() || "0";
+                
+                if (!isNaN(id) && id >= 1 && id <= 192 && current === "0") {
+                    currentRedList.push(id);
+                }
+            });
+
+            redRoomIds = currentRedList;
+            console.log('Данные обновлены. Красных квартир:', redRoomIds.length);
+        });
+    }
+
+    updateData();
+    setInterval(updateData, 10000); 
+
+    // --- КЛАСС ЦИФРЫ С УЧЕТОМ ЗАНЯТОЙ ЯЧЕЙКИ ---
+    class PaintNumber {
+        constructor(id, cellIndex, cell) {
+            this.id = id;
+            this.cellIndex = cellIndex; // Запоминаем индекс ячейки, чтобы освободить её позже
+            
+            // Точный расчет координат по центру выбранной ячейки
+            this.x = cell.col * cellWidth + (cellWidth / 2);
+            this.y = 180 + (cell.row * cellHeight) + (cellHeight / 2); 
+            
+            this.alpha = 0;              
+            this.state = 'fade-in';      
+            
+            this.fadeSpeed = Math.random() * 0.015 + 0.01; 
+            this.visibleTime = Math.random() * 80 + 60;    
+        }
+
+        update() {
+            if (this.state === 'fade-in') {
+                this.alpha += this.fadeSpeed;
+                if (this.alpha >= 1) {
+                    this.alpha = 1;
+                    this.state = 'visible';
+                }
+            } else if (this.state === 'visible') {
+                this.visibleTime--;
+                if (this.visibleTime <= 0) {
+                    this.state = 'fade-out';
+                }
+            } else if (this.state === 'fade-out') {
+                this.alpha -= this.fadeSpeed;
+            }
+        }
+
+        draw() {
+            ctx.globalAlpha = this.alpha;
+            ctx.fillStyle = '#e60000';
+            ctx.shadowColor = '#800000';
+            ctx.shadowBlur = 15;
+            ctx.fillText(this.id, this.x, this.y);
+        }
+    }
+
+    function draw() {
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.font = fontSize + 'px "LeviBrush", Impact, sans-serif';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+
+        // Ищем ячейки, которые сейчас не заняты отображаемыми цифрами
+        const busyCellIndices = activeNumbers.map(num => num.cellIndex);
+        const freeCellIndices = gridCells
+            .map((_, index) => index)
+            .filter(index => !busyCellIndices.includes(index));
+
+        // Добавляем новые цифры, только если есть свободные места на сетке
+        if (redRoomIds.length > 0 && activeNumbers.length < maxActiveNumbers && freeCellIndices.length > 0 && Math.random() > 0.7) {
+            const randomId = redRoomIds[Math.floor(Math.random() * redRoomIds.length)];
+            const isAlreadyVisible = activeNumbers.some(num => num.id === randomId);
+
+            if (!isAlreadyVisible) {
+                // Выбираем случайную пустую ячейку из списка свободных
+                const randomCellIndex = freeCellIndices[Math.floor(Math.random() * freeCellIndices.length)];
+                const targetCell = gridCells[randomCellIndex];
+
+                activeNumbers.push(new PaintNumber(randomId, randomCellIndex, targetCell));
+            }
+        }
+
+        for (let i = activeNumbers.length - 1; i >= 0; i--) {
+            const num = activeNumbers[i];
+            num.update();
+            num.draw();
+
+            if (num.state === 'fade-out' && num.alpha <= 0) {
+                activeNumbers.splice(i, 1); // Ячейка автоматически становится свободной на следующем кадре
+            }
+        }
+    }
+
+    document.fonts.ready.then(() => {
+        setInterval(draw, speedInterval);
+    });
+
+    function resizeViewport() {
+        const targetWidth = 1080;
+        const targetHeight = 1920;
+        const scale = Math.min(window.innerWidth / targetWidth, window.innerHeight / targetHeight);
+        viewport.style.transform = `scale(${scale})`;
+    }
+    window.addEventListener('resize', resizeViewport);
+    resizeViewport();
+</script>
+</body>
+</html>
