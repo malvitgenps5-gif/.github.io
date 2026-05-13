@@ -86,7 +86,7 @@
     const ctx = canvas.getContext('2d');
 
     // --- ВАШИ ОБНОВЛЕННЫЕ ПАРАМЕТРЫ ---
-    const fontSize = 150;          
+    const fontSize = 180;          
     const speedInterval = 15;     
     const maxActiveNumbers = 10;  
 
@@ -94,9 +94,9 @@
     let redRoomIds = [];          
 
     // --- ГЕНЕРАЦИЯ СЕТКИ ДЛЯ ИСКЛЮЧЕНИЯ ПЕРЕКРЫТИЯ ---
-    // Вычисляем количество возможных строк и колонок под размер 150px
-    const gridCols = Math.floor(canvas.width / (fontSize * 1.3)); 
-    const gridRows = Math.floor((canvas.height - 180) / (fontSize * 1.3)); 
+    // Коэффициент увеличен до 1.5, чтобы цифры размера 250px гарантированно помещались в сетку 1080x1920
+    const gridCols = Math.floor(canvas.width / (fontSize * 1.5)) || 1; 
+    const gridRows = Math.floor((canvas.height - 180) / (fontSize * 1.5)) || 1; 
     const cellWidth = canvas.width / gridCols;
     const cellHeight = (canvas.height - 180) / gridRows;
 
@@ -171,9 +171,8 @@
     class PaintNumber {
         constructor(id, cellIndex, cell) {
             this.id = id;
-            this.cellIndex = cellIndex; // Запоминаем индекс ячейки, чтобы освободить её позже
+            this.cellIndex = cellIndex; 
             
-            // Точный расчет координат по центру выбранной ячейки
             this.x = cell.col * cellWidth + (cellWidth / 2);
             this.y = 180 + (cell.row * cellHeight) + (cellHeight / 2); 
             
@@ -198,6 +197,10 @@
                 }
             } else if (this.state === 'fade-out') {
                 this.alpha -= this.fadeSpeed;
+                if (this.alpha <= 0) {
+                    this.alpha = 0;
+                    this.state = 'dead';
+                }
             }
         }
 
@@ -220,19 +223,35 @@
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'center';
 
-        // Ищем ячейки, которые сейчас не заняты отображаемыми цифрами
-        const busyCellIndices = activeNumbers.map(num => num.cellIndex);
+        // 1. Собираем индексы занятых ячеек и блокируем их соседей по горизонтали
+        const blockedCellIndices = new Set();
+
+        activeNumbers.forEach(num => {
+            blockedCellIndices.add(num.cellIndex);
+            
+            const currentCell = gridCells[num.cellIndex];
+            if (currentCell) {
+                // Ищем соседа слева (тот же ряд, колонка - 1)
+                const leftNeighborIndex = gridCells.findIndex(c => c.row === currentCell.row && c.col === currentCell.col - 1);
+                if (leftNeighborIndex !== -1) blockedCellIndices.add(leftNeighborIndex);
+
+                // Ищем соседа справа (тот же ряд, колонка + 1)
+                const rightNeighborIndex = gridCells.findIndex(c => c.row === currentCell.row && c.col === currentCell.col + 1);
+                if (rightNeighborIndex !== -1) blockedCellIndices.add(rightNeighborIndex);
+            }
+        });
+
+        // 2. Фильтруем полностью свободные ячейки с учетом горизонтального соседства
         const freeCellIndices = gridCells
             .map((_, index) => index)
-            .filter(index => !busyCellIndices.includes(index));
+            .filter(index => !blockedCellIndices.has(index));
 
-        // Добавляем новые цифры, только если есть свободные места на сетке
+        // Добавляем новые цифры
         if (redRoomIds.length > 0 && activeNumbers.length < maxActiveNumbers && freeCellIndices.length > 0 && Math.random() > 0.7) {
             const randomId = redRoomIds[Math.floor(Math.random() * redRoomIds.length)];
             const isAlreadyVisible = activeNumbers.some(num => num.id === randomId);
 
             if (!isAlreadyVisible) {
-                // Выбираем случайную пустую ячейку из списка свободных
                 const randomCellIndex = freeCellIndices[Math.floor(Math.random() * freeCellIndices.length)];
                 const targetCell = gridCells[randomCellIndex];
 
@@ -240,29 +259,18 @@
             }
         }
 
-        for (let i = activeNumbers.length - 1; i >= 0; i--) {
-            const num = activeNumbers[i];
+        // Обновляем и отрисовываем активные элементы
+        activeNumbers.forEach(num => {
             num.update();
             num.draw();
+        });
 
-            if (num.state === 'fade-out' && num.alpha <= 0) {
-                activeNumbers.splice(i, 1); // Ячейка автоматически становится свободной на следующем кадре
-            }
-        }
+        // Удаляем завершившие анимацию цифры
+        activeNumbers = activeNumbers.filter(num => num.state !== 'dead');
     }
 
-    document.fonts.ready.then(() => {
-        setInterval(draw, speedInterval);
-    });
-
-    function resizeViewport() {
-        const targetWidth = 1080;
-        const targetHeight = 1920;
-        const scale = Math.min(window.innerWidth / targetWidth, window.innerHeight / targetHeight);
-        viewport.style.transform = `scale(${scale})`;
-    }
-    window.addEventListener('resize', resizeViewport);
-    resizeViewport();
+    setInterval(draw, speedInterval);
 </script>
+
 </body>
 </html>
