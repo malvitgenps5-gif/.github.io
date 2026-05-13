@@ -18,7 +18,7 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            background-color: #e60000; /* Изменено на красный */
+            background-color: #000000; /* Возвращен черный фон */
             overflow: hidden;
             display: flex;
             justify-content: center;
@@ -28,7 +28,7 @@
         #viewport {
             width: 1080px;
             height: 1920px;
-            background-color: #e60000; /* Изменено на красный */
+            background-color: #000000; /* Возвращен черный фон */
             overflow: hidden;
             position: relative;
             transform-origin: center center;
@@ -42,17 +42,18 @@
             font-size: 26px;
             font-weight: 600;
             letter-spacing: 1px;
-            background: rgba(150, 0, 0, 0.85); /* Сделали подложку темно-красной для читаемости */
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            color: #ffffff; /* Надпись в заголовке теперь БЕЛАЯ */
+            background: rgba(0, 0, 0, 0.85); /* Возвращена черная подложка */
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+            color: #ffffff; /* Надпись остается БЕЛОЙ */
             position: absolute;
             width: 100%;
             top: 0;
             left: 0;
             z-index: 10;
             box-sizing: border-box;
-            border-bottom: 2px solid #ff5555;
+            border-bottom: 2px solid #500;
         }
+
 
     </style>
 </head>
@@ -184,10 +185,10 @@
     }
 
     function drawNumber(id) {
-        // Очищаем холст КРАСНЫМ цветом вместо черного
+        // Очищаем холст ЧЕРНЫМ цветом
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 0;
-        ctx.fillStyle = '#e60000'; // Изменено на красный
+        ctx.fillStyle = '#000000'; // Изменено на черный
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         if (id === null) return;
@@ -209,11 +210,12 @@
         ctx.textAlign = 'center';
 
         // Рисуем одну цифру строго по центру БЕЛЫМ цветом
-        ctx.fillStyle = '#ffffff';      // Изменено на белый
-        ctx.shadowColor = '#ffffff';     // Изменено на белое свечение
-        ctx.shadowBlur = 20;             // Немного увеличили размытие для мягкости эффекта
+        ctx.fillStyle = '#ffffff';      // Текст остается белым
+        ctx.shadowColor = '#ffffff';     // Свечение остается белым
+        ctx.shadowBlur = 20;             
         ctx.fillText(id, centerX, centerY);
     }
+
 
     // Первый запуск при загрузке страницы
     updateData();
