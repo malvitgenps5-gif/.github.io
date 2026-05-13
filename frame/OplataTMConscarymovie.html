@@ -93,10 +93,9 @@
     let activeNumbers = [];       
     let redRoomIds = [];          
 
-    // --- ГЕНЕРАЦИЯ СЕТКИ ДЛЯ ИСКЛЮЧЕНИЯ ПЕРЕКРЫТИЯ ---
-    // Коэффициент увеличен до 1.5, чтобы цифры размера 250px гарантированно помещались в сетку 1080x1920
-    const gridCols = Math.floor(canvas.width / (fontSize * 1.5)) || 1; 
-    const gridRows = Math.floor((canvas.height - 180) / (fontSize * 1.5)) || 1; 
+	// --- ГЕНЕРАЦИЯ СЕТКИ ДЛЯ ИСКЛЮЧЕНИЯ ПЕРЕКРЫТИЯ ---
+	const gridCols = Math.floor(canvas.width / (fontSize * 1.4)) || 1; 
+	const gridRows = Math.floor((canvas.height - 180) / (fontSize * 1.4)) || 1;  
     const cellWidth = canvas.width / gridCols;
     const cellHeight = (canvas.height - 180) / gridRows;
 
