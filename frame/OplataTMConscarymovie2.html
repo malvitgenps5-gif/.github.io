@@ -201,10 +201,21 @@
 
         if (id === null) return;
 
-		// Настраиваем стили шрифта
-		ctx.font = fontSize + 'px "AlehoScribble", Impact, sans-serif';
-		ctx.textBaseline = 'middle';
-		ctx.textAlign = 'center';
+        // Определяем размер шрифта в зависимости от количества цифр в ID
+        let dynamicFontSize = 700; // Значение по умолчанию
+
+        if (id >= 0 && id <= 9) {
+            dynamicFontSize = 1200; // Крупный размер для однозначных чисел
+        } else if (id >= 10 && id <= 99) {
+            dynamicFontSize = 1000; // Средний размер для двузначных чисел
+        } else if (id >= 100 && id <= 999) {
+            dynamicFontSize = 700; // Стандартный размер для трехзначных чисел
+        }
+
+        // Применяем вычисленный динамический размер шрифта
+        ctx.font = dynamicFontSize + 'px "AlehoScribble", Impact, sans-serif';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
 
         // Рисуем одну цифру строго по центру
         ctx.fillStyle = '#e60000';
