@@ -38,44 +38,14 @@
             transform-origin: center center;
             flex-shrink: 0;
         }
-
-        .header {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            padding: 10px;
-            text-align: center;
-            font-size: 26px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            background: rgba(0, 0, 0, 0.85); /* Возвращена черная подложка */
-            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
-            color: #ffffff; /* Надпись остается БЕЛОЙ */
-            position: absolute;
-            width: 100%;
-            top: 0;
-            left: 0;
-            z-index: 10;
-            box-sizing: border-box;
-            border-bottom: 2px solid #500;
-        }
-
-
     </style>
 </head>
 <body>
 <div style="font-family: 'AlehoScribble'; opacity: 0.01; position: absolute; top: -999px; left: -999px;">0123456789</div><div id="viewport">
-    <div class="header">
-        Консьерж НК3 <span id="current-month"></span>
-    </div>
-    <div id="grid"></div>
     <canvas id="matrix" width="1080" height="1920"></canvas>
 </div>
 
 <script>
-    const now = new Date();
-    const month = String(now.getMonth() + 1).padStart(2, '0'); 
-    const year = now.getFullYear();
-    document.getElementById('current-month').innerText = `${month}/${year}`;
-
     const canvas = document.getElementById('matrix');
     const ctx = canvas.getContext('2d');
 
