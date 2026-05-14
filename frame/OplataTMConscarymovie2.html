@@ -6,70 +6,118 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ЖК Дмитриевский</title>
- <style>
-		@font-face {
-            font-family: 'Forresta';
-            /* Браузер проверяет форматы по очереди. Название файла приведено к нижнему регистру без пробелов */
-            src: url('forresta-personal-use.woff') format('woff'),
-                 url('forresta-personal-use.ttf') format('truetype'),
-                 url('forresta-personal-use.otf') format('opentype');
-            font-weight: normal;
-            font-style: normal;
-            font-display: block; /* Предотвращает появление стандартного шрифта во время загрузки */
-        }
+<style>
+    @font-face {
+        font-family: 'Forresta';
+        src: url('forresta-personal-use.woff') format('woff'),
+             url('forresta-personal-use.ttf') format('truetype'),
+             url('forresta-personal-use.otf') format('opentype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: block;
+    }
 
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #000;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-        #viewport {
-            width: 1080px;
-            height: 1920px;
-            background-color: #000;
-            overflow: hidden;
-            position: relative;
-            transform-origin: center center;
-            flex-shrink: 0;
-        }
+    #viewport {
+        width: 1080px;
+        height: 1920px;
+        background-color: #000;
+        overflow: hidden;
+        position: relative;
+        transform-origin: center center;
+        flex-shrink: 0;
+    }
 
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
+    canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        /* Отключаем сглаживание: GPU аппаратно размножит пиксели до grainSize = 6 */
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+    }
 
-    </style>
+    /* Новый элемент для текста, обрабатываемый исключительно видеокартой */
+    #glitch-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        /* Сдвиг на 50% назад для идеального центрирования + форсирование 3D слоя на GPU */
+        transform: translate(-50%, -50%) translateZ(0);
+        z-index: 2;
+        font-family: 'Forresta', Impact, sans-serif;
+        line-height: 1;
+        text-align: center;
+        color: #ffffff;
+        pointer-events: none;
+        white-space: nowrap;
+        
+        /* Хроматический сдвиг: красный влево-вниз (-12px 4px), бирюзовый вправо-вверх (8px -4px) */
+        filter: drop-shadow(-12px 4px 0 #ff0000) drop-shadow(8px -4px 0 #00ffff);
+    }
+
+    /* Специфичные размеры шрифтов для разного количества символов */
+    .font-single { font-size: 1500px; }
+    .font-double { font-size: 1400px; }
+    .font-triple { font-size: 1160px; }
+    .glitch-hidden { display: none; }
+</style>
 </head>
 <body>
 <div style="font-family: 'Forresta'; opacity: 0.01; position: absolute; top: -999px; left: -999px;">0123456789</div>
-<div id="viewport">    
-    <canvas id="matrix" width="1080" height="1920"></canvas>
+<div id="viewport">
+    <!-- Реальный размер холста уменьшен в 6 раз для оптимизации -->
+    <canvas id="tv-canvas" width="180" height="320"></canvas>
+    <div id="glitch-text" class="glitch-hidden"></div>
 </div>
+
 <script>
-    const canvas = document.getElementById('matrix');
-    const ctx = canvas.getContext('2d');
+    // Получаем элементы и принудительно задаем низкое физическое разрешение холста
+    // 1080 / 6 = 180, 1920 / 6 = 320. CSS растянет это обратно до 1080x1920 без размытия.
+    const canvas = document.getElementById('tv-canvas');
+    canvas.width = 180;
+    canvas.height = 320;
 
-    // --- ПАРАМЕТРЫ ОТОБРАЖЕНИЯ ---
+    // Инициализируем контекст без поддержки альфа-канала для максимальной скорости рендеринга
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const textElement = document.getElementById('glitch-text');
+
+    const viewWidth = canvas.width;
+    const viewHeight = canvas.height;
+
+    // --- ПАРАМЕТРЫ ОТОБРАЖЕНИЯ И ДАННЫЕ ---
     let redRoomIds = [];          
-    let currentIdToDraw = null; // Храним ID текущей квартиры для постоянной перерисовки
+    let currentIdToDraw = null; 
 
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
+    // Шаблон базовой подложки цвета #969aa4 в формате памяти ABGR (Alpha, Blue, Green, Red)
+    // 0xFF (Alpha) | 0xA4 (Blue) | 0x9A (Green) | 0x96 (Red)
+    const baseImageData = ctx.createImageData(viewWidth, viewHeight);
+    const baseBuffer = new Uint32Array(baseImageData.data.buffer);
+    for (let i = 0; i < baseBuffer.length; i++) {
+        baseBuffer[i] = 0xFF000000 | (0xA4 << 16) | (0x9A << 8) | 0x96;
+    }
+
+    // Постоянные буферы под текущий кадр во избежание утечек оперативной памяти
+    const currentFrameData = ctx.createImageData(viewWidth, viewHeight);
+    const currentBuffer = new Uint32Array(currentFrameData.data.buffer);
 
     async function getSharedData() {
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv'; // Ваша ссылка на таблицу
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv';
         const CACHE_KEY = 'sheet_data';
         const TIMESTAMP_KEY = 'sheet_timestamp';
         const TTL = 5 * 60 * 1000;
@@ -102,8 +150,6 @@
             if (!csv) return;
 
             const rows = csv.split(/\r?\n/).filter(row => row.trim() !== "");
-            
-            // ИСПРАВЛЕНО: берем первую строку массива rows[0], чтобы разбить её на заголовки
             const headers = rows[0].split(",").map(h => h.trim().toLowerCase());
             
             const idIdx = headers.indexOf("id");
@@ -156,78 +202,70 @@
         localStorage.setItem('last_shown_room_id', currentIdToDraw.toString());
     }
 
-    // --- ФУНКЦИЯ ГЕНЕРАЦИИ ТВ-ШУМА ---
-    function drawTVStatic() {
-        const grainSize = 20; // Размер одного «зерна» шума в пикселях. Меньше — красивее, больше — быстрее работает.
-        
-        // Рисуем сетку случайных полупрозрачных квадратов поверх черного фона
-        for (let x = 0; x < canvas.width; x += grainSize) {
-            for (let y = 0; y < canvas.height; y += grainSize) {
-                // Случайная яркость от глубокого черного до темно-серого
-                const grayValue = Math.floor(Math.random() * 35); 
-                // Случайная прозрачность для эффекта мерцания
-                const alpha = Math.random() * 0.15; 
-                
-                ctx.fillStyle = `rgba(${grayValue}, ${grayValue}, ${grayValue}, ${alpha})`;
-                ctx.fillRect(x, y, grainSize, grainSize);
-            }
-        }
-    }
-
-    // --- ПОСТОЯННЫЙ АНИМАЦИОННЫЙ ЦИКЛ ОБНОВЛЕНИЯ ЭКРАНА ---
+    // --- АППАРАТНЫЙ АНИМАЦИОННЫЙ ЦИКЛ ОБНОВЛЕНИЯ ЭКРАНА ---
     function renderLoop() {
-        // 1. Очищаем экран базовым темно-серым цветом (подложка под шум)
-        ctx.globalAlpha = 1;
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = '#969aa4';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // 1. Быстро сбрасываем рабочий холст к базовому серому цвету
+        currentBuffer.set(baseBuffer);
 
-        // 2. Накладываем живой динамический шум ТВ-помех
-        drawTVStatic();
+        // 2. Накладываем шум ТВ-помех за один быстрый проход цикла в памяти процессора
+        const len = currentBuffer.length;
+        for (let i = 0; i < len; i++) {
+            const gray = Math.floor(Math.random() * 35);
+            const alpha = Math.random() * 0.15;
+            
+            const bgPixel = currentBuffer[i];
+            const bgR = bgPixel & 0xFF;
+            const bgG = (bgPixel >> 8) & 0xFF;
+            const bgB = (bgPixel >> 16) & 0xFF;
+            
+            // Быстрое попиксельное альфа-смешивание
+            const outR = Math.floor(gray * alpha + bgR * (1 - alpha));
+            const outG = Math.floor(gray * alpha + bgG * (1 - alpha));
+            const outB = Math.floor(gray * alpha + bgB * (1 - alpha));
+            
+            currentBuffer[i] = 0xFF000000 | (outB << 16) | (outG << 8) | outR;
+        }
+        
+        // Видеокарта мгновенно выводит готовую матрицу пикселей на дисплей
+        ctx.putImageData(currentFrameData, 0, 0);
 
-        // 3. Если есть активный ID квартиры, рисуем его с глитч-эффектом поверх шума
+        // 3. Вывод текста силами графического чипа через DOM-ноду
         if (currentIdToDraw !== null) {
-            let dynamicFontSize = 180;
-		
-            if (currentIdToDraw >= 0 && currentIdToDraw <= 9) {
-                dynamicFontSize = 1500;
-            } else if (currentIdToDraw >= 10 && currentIdToDraw <= 99) {
-                dynamicFontSize = 1400;
-            } else if (currentIdToDraw >= 100 && currentIdToDraw <= 999) {
-                dynamicFontSize = 1160;
+            // Чтобы не дергать DOM лишний раз, меняем текст только при изменении ID
+            if (textElement.innerText !== String(currentIdToDraw)) {
+                textElement.innerText = currentIdToDraw;
             }
-            ctx.font = dynamicFontSize + 'px "Forresta", Impact, sans-serif';
-            ctx.textBaseline = 'middle';
-            ctx.textAlign = 'center';
-
-            // Красный силуэт влево-вниз
-            ctx.fillStyle = '#ff0000';
-            ctx.fillText(currentIdToDraw, centerX - 12, centerY + 4);
-
-            // Бирюзовый силуэт вправо-вверх
-            ctx.fillStyle = '#00ffff'; 
-            ctx.fillText(currentIdToDraw, centerX + 8, centerY - 4);
-
-            // Основной белый текст строго по центру
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(currentIdToDraw, centerX, centerY);
+            
+            // Сбрасываем старые классы масштабирования
+            textElement.className = '';
+            
+            // Назначаем класс размера шрифта в зависимости от разрядности числа
+            if (currentIdToDraw >= 0 && currentIdToDraw <= 9) {
+                textElement.classList.add('font-single');
+            } else if (currentIdToDraw >= 10 && currentIdToDraw <= 99) {
+                textElement.classList.add('font-double');
+            } else if (currentIdToDraw >= 100 && currentIdToDraw <= 999) {
+                textElement.classList.add('font-triple');
+            }
+        } else {
+            textElement.className = 'glitch-hidden';
         }
 
-        // Запрашиваем следующий кадр анимации (работает на частоте монитора, обычно 60 FPS)
+        // Запрашиваем следующий кадр с частотой обновления развертки монитора
         requestAnimationFrame(renderLoop);
     }
 
     function initializeApp() {
         updateData();
-        //setInterval(updateData, 10000); // Обновляем данные и переключаем ID раз в 10 секунд
+        // setInterval(updateData, 10000); // Раскомментируйте, если требуется автоматическое обновление раз в 10 секунд
         
-        // Запускаем бесконечный цикл отрисовки шума и текста
         renderLoop(); 
     }
 
+    // Безопасная инициализация после загрузки шрифтов
     if (document.fonts) {
         document.fonts.ready.then(function() {
-            console.log('Шрифт Sabotase готов. Запуск анимации шума.');
+            console.log('Шрифты загружены. Запуск ТВ-эффектов через GPU.');
             initializeApp();
         });
     } else {
