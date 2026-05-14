@@ -176,7 +176,7 @@
         const currentNow = Date.now();
 
         if (cached && lastUpdate && (currentNow - lastUpdate < TTL)) {
-			console.log('Данные взяли из CACHE...');
+			console.log('Фрейм взял данные из LocalStorage');
             return cached;
         }
 
