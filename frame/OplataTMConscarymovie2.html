@@ -176,6 +176,7 @@
         const currentNow = Date.now();
 
         if (cached && lastUpdate && (currentNow - lastUpdate < TTL)) {
+			console.log('Данные взяли из CACHE...');
             return cached;
         }
 
