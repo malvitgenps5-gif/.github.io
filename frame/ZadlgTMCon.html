@@ -102,6 +102,7 @@ async function getSharedData() {
     const now = Date.now();
 
     if (cached && lastUpdate && (now - lastUpdate < TTL)) {
+		console.log('Фрейм взял данные из LocalStorage');
         return cached;
     }
 
