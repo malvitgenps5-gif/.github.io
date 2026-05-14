@@ -7,7 +7,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="googleapis.com" rel="stylesheet">
+    <link href="https://googleapis.com" rel="stylesheet">
     
     <style>
         html, body {
@@ -86,10 +86,17 @@
 
     const columns = Math.floor(canvas.width / (fontSize * columnSpacing));
     let drops = new Array(columns).fill(1);
+	
+    // ИСПРАВЛЕНО: используем правильную переменную 'columns'
+    const columnOffsets = [];
+    for (let i = 0; i < columns; i++) { 
+        columnOffsets[i] = Math.floor(Math.random() * 192); 
+    }
 
     // Списки комнат, разделенные по статусам для быстрого выбора
     let greenRooms = [];
     let redRooms = [];
+
 
     async function getSharedData() {
         const CSV_URL =  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv'; 
@@ -124,10 +131,7 @@
         getSharedData().then(csv => {
             if (!csv) return;
 
-            // Разделяем на строки и убираем пустые
             const rows = csv.split(/\r?\n/).filter(row => row.trim() !== "");
-            
-            // Получаем заголовки из первой строки
             const headers = rows[0].split(",").map(h => h.trim().toLowerCase());
             
             const idIdx = headers.indexOf("id");
@@ -136,75 +140,98 @@
             const newGreen = [];
             const newRed = [];
             
-            // Обрабатываем строки с данными (пропуская заголовки)
             rows.slice(1).forEach(rowStr => {
                 const row = rowStr.split(",");
-                const id = row[idIdx]?.trim();
+                const idRaw = row[idIdx]?.trim();
                 const current = row[currentIdx]?.trim() || "0";
                 
-                if (id) {
-                    // Условие фильтрации: исключаем "0" и ID, которые начинаются на "i" или "I"
-                    const isZero = id === "0";
-                    const startsWithI = id.toLowerCase().startsWith('i');
+                if (idRaw) {
+                    const isZero = idRaw === "0";
+                    const startsWithI = idRaw.toLowerCase().startsWith('i');
 
                     if (!isZero && !startsWithI) {
-                        if (current === "1") {
-                            newGreen.push(id);
-                        } else {
-                            newRed.push(id);
+                        // Преобразуем строку в число
+                        const idAsNumber = Number(idRaw);
+
+                        // Проверяем, что это корректное число (не NaN)
+                        if (!isNaN(idAsNumber)) {
+                            if (current === "1") {
+                                newGreen.push(idAsNumber);
+                            } else {
+                                newRed.push(idAsNumber);
+                            }
                         }
                     }
                 }
             });
 
-            // Заполняем рабочие массивы очищенными данными
-            greenRooms = newGreen.length ? newGreen : Array.from({length: 96}, (_, i) => String(i * 2 + 2));
-            redRooms = newRed.length ? newRed : Array.from({length: 96}, (_, i) => String(i * 2 + 1));
+            // Сортируем полученные массивы от меньшего к большему
+            newGreen.sort((a, b) => a - b);
+            newRed.sort((a, b) => a - b);
+
+            // Заполняем рабочие массивы числами (уже отсортированными)
+            greenRooms = newGreen.length ? newGreen : Array.from({length: 96}, (_, i) => i * 2 + 2);
+            redRooms = newRed.length ? newRed : Array.from({length: 96}, (_, i) => i * 2 + 1);
 
             console.log(`Данные обновлены после фильтрации. Зеленых: ${greenRooms.length}, Красных: ${redRooms.length}`);
         });
     }
 
 
+
     updateData();
     setInterval(updateData, 10000); 
 
-    function draw() {
-        ctx.shadowBlur = 0; 
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+	function draw() {
+		// ЗАЩИТА: Если массивы еще не успели загрузиться из CSV, выходим из функции
+		if (greenRooms.length === 0 || redRooms.length === 0) return;
 
-        ctx.font = fontSize + 'px "VT323", monospace';
-        ctx.textAlign = 'right';
+		ctx.shadowBlur = 0; 
+		ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        for (let i = 0; i < drops.length; i++) {
-            let roomId;
-            let targetColor;
+		ctx.font = fontSize + 'px "VT323", monospace';
+		ctx.textAlign = 'right';
 
-            // Логика чередования: четные индексы i — зеленые, нечетные — красные
-            if (i % 2 === 0) {
-                targetColor = '#0f0';
-                roomId = greenRooms[Math.floor(Math.random() * greenRooms.length)] || "—";
-            } else {
-                targetColor = '#f00';
-                roomId = redRooms[Math.floor(Math.random() * redRooms.length)] || "—";
-            }
-            
-            ctx.fillStyle = targetColor;
-            ctx.shadowColor = targetColor; 
-            ctx.shadowBlur = 10;           
-            
-            const xPosition = canvas.width - (i * fontSize * columnSpacing) - 20;
-            const yPosition = drops[i] * fontSize;
-            
-            ctx.fillText(roomId, xPosition, yPosition);
+		for (let i = 0; i < drops.length; i++) {
+			let roomId;
+			let targetColor;
 
-            if (yPosition > canvas.height && Math.random() > 0.98) {
-                drops[i] = 0;
-            }
-            drops[i]++;
-        }
-    }
+			// Текущий шаг падения + персональное случайное смещение столбца
+			const currentDropStep = drops[i] + columnOffsets[i];
+
+			// Логика чередования: четные индексы i — зеленые, нечетные — красные
+			if (i % 2 === 0) {
+				targetColor = '#0f0';
+				// Индекс идет по порядку, но стартует со случайного элемента
+				const index = currentDropStep % greenRooms.length;
+				roomId = greenRooms[index] || "—";
+			} else {
+				targetColor = '#f00';
+				// Индекс идет по порядку, но стартует со случайного элемента
+				const index = currentDropStep % redRooms.length;
+				roomId = redRooms[index] || "—";
+			}
+			
+			ctx.fillStyle = targetColor;
+			ctx.shadowColor = targetColor; 
+			ctx.shadowBlur = 10;           
+			
+			const xPosition = canvas.width - (i * fontSize * columnSpacing) - 20;
+			const yPosition = drops[i] * fontSize;
+			
+			ctx.fillText(roomId, xPosition, yPosition);
+
+			if (yPosition > canvas.height && Math.random() > 0.98) {
+				drops[i] = 0;
+				columnOffsets[i] = Math.floor(Math.random() * 1000);
+			}
+			drops[i]++;
+		}
+	}
+
+
+
 
     document.fonts.ready.then(() => {
         setInterval(draw, speedInterval);
