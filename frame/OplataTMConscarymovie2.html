@@ -111,22 +111,10 @@
 </div>
 
 <script>
-    // Получаем элементы и принудительно задаем низкое физическое разрешение холста
-    // 1080 / 6 = 180, 1920 / 6 = 320. CSS растянет это обратно до 1080x1920 без размытия.
-    const canvas = document.getElementById('tv-canvas');
-    canvas.width = 54;   // 1080 / 20
-    canvas.height = 96;  // 1920 / 20
-
-    // Инициализируем контекст без поддержки альфа-канала для максимальной скорости рендеринга
-   /* const ctx = canvas.getContext('2d', { alpha: false });*/
-    
     // Элементы интерфейса
     const textElement = document.getElementById('glitch-text');
     const line1 = document.getElementById('phrase-line1');
     const line2 = document.getElementById('phrase-line2');
-
-    const viewWidth = canvas.width;
-    const viewHeight = canvas.height;
 
     // --- ПАРАМЕТРЫ ОТОБРАЖЕНИЯ И ДАННЫЕ ---
     let redRoomIds = [];          
@@ -153,20 +141,8 @@
 		["Магнитный ключ искать не надо —", "Консьерж откроет, мы и рады"]
     ];
 
-    // Шаблон базовой подложки цвета #969aa4 в формате памяти ABGR (Alpha, Blue, Green, Red)
-    // 0xFF (Alpha) | 0xA4 (Blue) | 0x9A (Green) | 0x96 (Red)
-  /*  const baseImageData = ctx.createImageData(viewWidth, viewHeight);
-    const baseBuffer = new Uint32Array(baseImageData.data.buffer);
-    for (let i = 0; i < baseBuffer.length; i++) {
-        baseBuffer[i] = 0xFF000000 | (0xA4 << 16) | (0x9A << 8) | 0x96;
-    }*/
-
-    // Постоянные буферы под текущий кадр во избежание утечек оперативной памяти
-   /* const currentFrameData = ctx.createImageData(viewWidth, viewHeight);
-    const currentBuffer = new Uint32Array(currentFrameData.data.buffer);*/
-
     async function getSharedData() {
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv'; // 
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv'; // Укажите ваш URL к CSV
         const CACHE_KEY = 'sheet_data';
         const TIMESTAMP_KEY = 'sheet_timestamp';
         const TTL = 5 * 60 * 1000;
@@ -176,7 +152,7 @@
         const currentNow = Date.now();
 
         if (cached && lastUpdate && (currentNow - lastUpdate < TTL)) {
-			console.log('Фрейм взял данные из LocalStorage');
+            console.log('Фрейм взял данные из LocalStorage');
             return cached;
         }
 
@@ -227,6 +203,7 @@
     function selectNextNumber() {
         if (redRoomIds.length === 0) {
             currentIdToDraw = null;
+            if (textElement) textElement.className = 'glitch-hidden';
             return;
         }
 
@@ -251,11 +228,10 @@
         currentIdToDraw = redRoomIds[nextIndex];
         localStorage.setItem('last_shown_room_id', currentIdToDraw.toString());
 
-        // Принудительно меняем текст сверху ТОЛЬКО в момент смены ID квартиры
-        updateRandomText();
+        // Обновляем интерфейс сразу в момент выбора номера
+        updateUI();
     }
 
-    // Выбор случайной пары строк из массива
     function updateRandomText() {
         if (!line1 || !line2) return;
         const randomPair = textPairs[Math.floor(Math.random() * textPairs.length)];
@@ -263,44 +239,14 @@
         line2.textContent = randomPair[1];
     }
 
-    // --- АППАРАТНЫЙ АНИМАЦИОННЫЙ ЦИКЛ ОБНОВЛЕНИЯ ЭКРАНА ---
-    function renderLoop() {
-        // 1. Быстро сбрасываем рабочий холст к базовому серому цвету
-        /* currentBuffer.set(baseBuffer);
+    // Вся работа с DOM теперь происходит только здесь и только при смене квартиры
+    function updateUI() {
+        if (!textElement) return;
 
-        // 2. Накладываем шум ТВ-помех за один быстрый проход цикла в памяти процессора
-       const len = currentBuffer.length;
-        for (let i = 0; i < len; i++) {
-            const gray = Math.floor(Math.random() * 35);
-            const alpha = Math.random() * 0.15;
-            
-            const bgPixel = currentBuffer[i];
-            const bgR = bgPixel & 0xFF;
-            const bgG = (bgPixel >> 8) & 0xFF;
-            const bgB = (bgPixel >> 16) & 0xFF;
-            
-            // Быстрое попиксельное альфа-смешивание
-            const outR = Math.floor(gray * alpha + bgR * (1 - alpha));
-            const outG = Math.floor(gray * alpha + bgG * (1 - alpha));
-            const outB = Math.floor(gray * alpha + bgB * (1 - alpha));
-            
-            currentBuffer[i] = 0xFF000000 | (outB << 16) | (outG << 8) | outR;
-        }
-        
-        // Видеокарта мгновенно выводит готовую матрицу пикселей на дисплей
-        ctx.putImageData(currentFrameData, 0, 0);*/
-
-        // 3. Вывод текста силами графического чипа через DOM-ноду
         if (currentIdToDraw !== null) {
-            // Чтобы не дергать DOM лишний раз, меняем текст только при изменении ID
-            if (textElement.innerText !== String(currentIdToDraw)) {
-                textElement.innerText = currentIdToDraw;
-            }
-            
-            // Сбрасываем старые классы масштабирования, сохраняя базовый класс слоя
+            textElement.innerText = currentIdToDraw;
             textElement.className = 'glitch-layer';
             
-            // Назначаем класс размера шрифта в зависимости от разрядности числа
             if (currentIdToDraw >= 0 && currentIdToDraw <= 9) {
                 textElement.classList.add('font-single');
             } else if (currentIdToDraw >= 10 && currentIdToDraw <= 99) {
@@ -312,21 +258,18 @@
             textElement.className = 'glitch-hidden';
         }
 
-        // Запрашиваем следующий кадр с частотой обновления развертки монитора
-        requestAnimationFrame(renderLoop);
+        updateRandomText();
     }
 
     function initializeApp() {
         updateData();
-        // setInterval(updateData, 10000); // Раскомментируйте, если требуется автоматическое обновление раз в 10 секунд
-        
-        renderLoop(); 
+        // setInterval(updateData, 10000); // Автообновление данных при необходимости
     }
 
     // Безопасная инициализация после загрузки шрифтов
     if (document.fonts) {
         document.fonts.ready.then(function() {
-            console.log('Шрифты загружены. Запуск ТВ-эффектов через GPU.');
+            console.log('Шрифты загружены. Запуск приложения.');
             initializeApp();
         });
     } else {
