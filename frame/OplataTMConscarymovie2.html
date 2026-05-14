@@ -6,10 +6,8 @@
     <title>ЖК Дмитриевский</title>
 <style>
     @font-face {
-        font-family: 'Forresta';
-        src: url('forresta-personal-use.woff') format('woff'),
-             url('forresta-personal-use.ttf') format('truetype'),
-             url('forresta-personal-use.otf') format('opentype');
+        font-family: 'Buse';
+        src: url('buse.otf') format('opentype');
         font-weight: normal;
         font-style: normal;
         font-display: block;
@@ -20,7 +18,7 @@
         padding: 0;
         width: 100%;
         height: 100%;
-        background-color: #000;
+        background-color: #000000;
         overflow: hidden;
         display: flex;
         justify-content: center;
@@ -30,7 +28,7 @@
     #viewport {
         width: 1080px;
         height: 1920px;
-        background-color: #000;
+        background-color: #000000;
         overflow: hidden;
         position: relative;
         transform-origin: center center;
@@ -61,14 +59,15 @@
     .glitch-layer {
         position: relative;
         z-index: 2;
-        font-family: 'Forresta', Impact, sans-serif;
+        font-family: 'Buse', Impact, sans-serif;
         line-height: 1.1;
         text-align: center;
-        color: #ffeb3b;
+        color: #FF0000; /* Чистый белый для строгости */
         pointer-events: none;
         white-space: nowrap;
         transform: translateZ(0);
-        filter: drop-shadow(-12px 4px 0 #e040fb) drop-shadow(8px -4px 0 #00e676);
+        /* Классическое анаглифное RGB расслоение (Красный и Циан) */
+        filter: drop-shadow(10px -2px 0 #ffffff);
     }
 
     /* Верхний блок: Две строки текста */
@@ -96,14 +95,14 @@
     }
 
     /* Размеры шрифтов для цифр в зависимости от длины */
-    .font-single { font-size: 1100px; }
-    .font-double { font-size: 950px; }
-    .font-triple { font-size: 750px; }
+    .font-single { font-size: 900px; }
+    .font-double { font-size: 750px; }
+    .font-triple { font-size: 650px; }
     .glitch-hidden { display: none; }
 </style>
 </head>
 <body>
-<div style="font-family: 'Forresta'; opacity: 0.01; position: absolute; top: -999px; left: -999px;">0123456789</div>
+<div style="font-family: 'Buse'; opacity: 0.01; position: absolute; top: -999px; left: -999px;">0123456789</div>
 <div id="viewport">
     <canvas id="tv-canvas" width="180" height="320"></canvas>
     
@@ -125,7 +124,7 @@
     canvas.height = 96;  // 1920 / 20
 
     // Инициализируем контекст без поддержки альфа-канала для максимальной скорости рендеринга
-    const ctx = canvas.getContext('2d', { alpha: false });
+   /* const ctx = canvas.getContext('2d', { alpha: false });*/
     
     // Элементы интерфейса
     const textElement = document.getElementById('glitch-text');
@@ -150,15 +149,15 @@
 
     // Шаблон базовой подложки цвета #969aa4 в формате памяти ABGR (Alpha, Blue, Green, Red)
     // 0xFF (Alpha) | 0xA4 (Blue) | 0x9A (Green) | 0x96 (Red)
-    const baseImageData = ctx.createImageData(viewWidth, viewHeight);
+  /*  const baseImageData = ctx.createImageData(viewWidth, viewHeight);
     const baseBuffer = new Uint32Array(baseImageData.data.buffer);
     for (let i = 0; i < baseBuffer.length; i++) {
         baseBuffer[i] = 0xFF000000 | (0xA4 << 16) | (0x9A << 8) | 0x96;
-    }
+    }*/
 
     // Постоянные буферы под текущий кадр во избежание утечек оперативной памяти
-    const currentFrameData = ctx.createImageData(viewWidth, viewHeight);
-    const currentBuffer = new Uint32Array(currentFrameData.data.buffer);
+   /* const currentFrameData = ctx.createImageData(viewWidth, viewHeight);
+    const currentBuffer = new Uint32Array(currentFrameData.data.buffer);*/
 
     async function getSharedData() {
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv'; // 
@@ -260,10 +259,10 @@
     // --- АППАРАТНЫЙ АНИМАЦИОННЫЙ ЦИКЛ ОБНОВЛЕНИЯ ЭКРАНА ---
     function renderLoop() {
         // 1. Быстро сбрасываем рабочий холст к базовому серому цвету
-        currentBuffer.set(baseBuffer);
+        /* currentBuffer.set(baseBuffer);
 
         // 2. Накладываем шум ТВ-помех за один быстрый проход цикла в памяти процессора
-        const len = currentBuffer.length;
+       const len = currentBuffer.length;
         for (let i = 0; i < len; i++) {
             const gray = Math.floor(Math.random() * 35);
             const alpha = Math.random() * 0.15;
@@ -282,7 +281,7 @@
         }
         
         // Видеокарта мгновенно выводит готовую матрицу пикселей на дисплей
-        ctx.putImageData(currentFrameData, 0, 0);
+        ctx.putImageData(currentFrameData, 0, 0);*/
 
         // 3. Вывод текста силами графического чипа через DOM-ноду
         if (currentIdToDraw !== null) {
