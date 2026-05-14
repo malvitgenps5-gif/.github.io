@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ЖК Дмитриевский</title>
@@ -37,6 +35,14 @@
         position: relative;
         transform-origin: center center;
         flex-shrink: 0;
+        
+        /* Flexbox для вертикального выравнивания блоков */
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        padding: 100px 0; /* Отступы сверху и снизу */
+        box-sizing: border-box;
     }
 
     canvas {
@@ -47,43 +53,67 @@
         top: 0;
         left: 0;
         z-index: 1;
-        /* Отключаем сглаживание: GPU аппаратно размножит пиксели до grainSize = 6 */
         image-rendering: pixelated;
         image-rendering: crisp-edges;
     }
 
-    /* Новый элемент для текста, обрабатываемый исключительно видеокартой */
-    #glitch-text {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        /* Сдвиг на 50% назад для идеального центрирования + форсирование 3D слоя на GPU */
-        transform: translate(-50%, -50%) translateZ(0);
+    /* Общий контейнер для текстовых блоков */
+    .glitch-layer {
+        position: relative;
         z-index: 2;
         font-family: 'Forresta', Impact, sans-serif;
-        line-height: 1;
+        line-height: 1.1;
         text-align: center;
         color: #ffeb3b;
         pointer-events: none;
         white-space: nowrap;
-        
-        /* Хроматический сдвиг: красный влево-вниз (-12px 4px), бирюзовый вправо-вверх (8px -4px) */
+        transform: translateZ(0);
         filter: drop-shadow(-12px 4px 0 #e040fb) drop-shadow(8px -4px 0 #00e676);
     }
 
-    /* Специфичные размеры шрифтов для разного количества символов */
-    .font-single { font-size: 1500px; }
-    .font-double { font-size: 1400px; }
-    .font-triple { font-size: 1160px; }
+    /* Верхний блок: Две строки текста */
+    #phrase-container {
+        position: relative;
+        z-index: 2;
+        font-family: 'Arrial', Impact, sans-serif;
+        font-size: 100px; /* Подобранный размер для длинных стихов */
+        line-height: 1.4;
+        text-align: center;
+        color: #ffffff; /* Чистый белый цвет */
+        text-transform: uppercase;
+        margin-top: 200px;
+        width: 100%;
+        max-width: 960px;
+        white-space: normal;
+        word-wrap: break-word;
+        pointer-events: none;
+    }
+
+    /* Нижний блок: Цифры */
+    #glitch-text {
+        margin-bottom: 50px;
+    }
+
+    /* Размеры шрифтов для цифр в зависимости от длины */
+    .font-single { font-size: 1100px; }
+    .font-double { font-size: 950px; }
+    .font-triple { font-size: 750px; }
     .glitch-hidden { display: none; }
 </style>
 </head>
 <body>
 <div style="font-family: 'Forresta'; opacity: 0.01; position: absolute; top: -999px; left: -999px;">0123456789</div>
 <div id="viewport">
-    <!-- Реальный размер холста уменьшен в 6 раз для оптимизации -->
     <canvas id="tv-canvas" width="180" height="320"></canvas>
-    <div id="glitch-text" class="glitch-hidden"></div>
+    
+    <!-- Верхний блок для случайного текста -->
+    <div id="phrase-container">
+        <div id="phrase-line1"></div>
+        <div id="phrase-line2"></div>
+    </div>
+
+    <!-- Нижний блок для цифр -->
+    <div id="glitch-text" class="glitch-layer glitch-hidden"></div>
 </div>
 
 <script>
@@ -95,7 +125,11 @@
 
     // Инициализируем контекст без поддержки альфа-канала для максимальной скорости рендеринга
     const ctx = canvas.getContext('2d', { alpha: false });
+    
+    // Элементы интерфейса
     const textElement = document.getElementById('glitch-text');
+    const line1 = document.getElementById('phrase-line1');
+    const line2 = document.getElementById('phrase-line2');
 
     const viewWidth = canvas.width;
     const viewHeight = canvas.height;
@@ -103,6 +137,15 @@
     // --- ПАРАМЕТРЫ ОТОБРАЖЕНИЯ И ДАННЫЕ ---
     let redRoomIds = [];          
     let currentIdToDraw = null; 
+
+    // Массив с парами строк для случайного вывода сверху
+    const textPairs = [
+        ["Консьерж на месте круглый год,", "Оплаты вашей очень ждет!"],
+        ["Чтоб в подъезде было чисто,", "Внесите взнос консьержу быстро!"],
+        ["Помнить нужно про уют - ", "Оплатите скромный труд!"],
+        ["Чистый холл, цветы, уют -", "Оплатите этот труд!"],
+        ["Месяц быстро пролетел - ", "Сдать консьержу - первый дел!"]
+    ];
 
     // Шаблон базовой подложки цвета #969aa4 в формате памяти ABGR (Alpha, Blue, Green, Red)
     // 0xFF (Alpha) | 0xA4 (Blue) | 0x9A (Green) | 0x96 (Red)
@@ -117,7 +160,7 @@
     const currentBuffer = new Uint32Array(currentFrameData.data.buffer);
 
     async function getSharedData() {
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv';
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv'; // 
         const CACHE_KEY = 'sheet_data';
         const TIMESTAMP_KEY = 'sheet_timestamp';
         const TTL = 5 * 60 * 1000;
@@ -200,6 +243,17 @@
 
         currentIdToDraw = redRoomIds[nextIndex];
         localStorage.setItem('last_shown_room_id', currentIdToDraw.toString());
+
+        // Принудительно меняем текст сверху ТОЛЬКО в момент смены ID квартиры
+        updateRandomText();
+    }
+
+    // Выбор случайной пары строк из массива
+    function updateRandomText() {
+        if (!line1 || !line2) return;
+        const randomPair = textPairs[Math.floor(Math.random() * textPairs.length)];
+        line1.textContent = randomPair[0];
+        line2.textContent = randomPair[1];
     }
 
     // --- АППАРАТНЫЙ АНИМАЦИОННЫЙ ЦИКЛ ОБНОВЛЕНИЯ ЭКРАНА ---
@@ -236,8 +290,8 @@
                 textElement.innerText = currentIdToDraw;
             }
             
-            // Сбрасываем старые классы масштабирования
-            textElement.className = '';
+            // Сбрасываем старые классы масштабирования, сохраняя базовый класс слоя
+            textElement.className = 'glitch-layer';
             
             // Назначаем класс размера шрифта в зависимости от разрядности числа
             if (currentIdToDraw >= 0 && currentIdToDraw <= 9) {
@@ -274,6 +328,7 @@
         };
     }
 </script>
+
 
 </body>
 </html>
