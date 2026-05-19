@@ -1,251 +1,243 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ЖК Дмитриевский</title>
-    <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #viewport {
-            width: 1080px;
-            height: 1920px;
-            background-color: #000;
-            overflow: hidden;
-            position: relative;
-            transform-origin: center center;
-            flex-shrink: 0;
-        }
-
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
-
-        .header {
-            font-family: Segoe UI, Arial, sans-serif;
-            padding: 10px;
-            text-align: center;
-            font-size: 26px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            background: black;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            color: #0f0;
-            position: absolute;
-            width: 100%;
-            top: 0;
-            left: 0;
-            z-index: 10;
-            box-sizing: border-box;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>ЖК Дмитриевский</title>
+  <style>
+    /* Обнуление отступов и скрытие скроллбаров */
+    html, body { 
+      margin: 0; 
+      padding: 0; 
+      width: 100%; 
+      height: 100%; 
+      background-color: #000; 
+      overflow: hidden; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+    } 
+    /* Контейнер строго фиксированного вертикального разрешения */ 
+    #viewport { 
+      width: 1080px; 
+      height: 1920px; 
+      background-color: #000; 
+      overflow: hidden; 
+      position: relative; 
+      transform-origin: center center; 
+      flex-shrink: 0; 
+    } 
+    /* Холст заполняет только область контейнера */ 
+    canvas { 
+      display: block; 
+      width: 100%; 
+      height: 100%; 
+      position: absolute; 
+      top: 0; 
+      left: 0; 
+      z-index: 1; 
+    } 
+    /* Стили для заголовка */ 
+    .header { 
+      font-family: Segoe UI, Arial, sans-serif; 
+      padding: 10px; 
+      text-align: center; 
+      font-size: 26px; 
+      font-weight: 600; 
+      letter-spacing: 1px; 
+      background: black; 
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5); 
+      color: #0f0; 
+      position: absolute; 
+      width: 100%; 
+      top: 0; 
+      left: 0; 
+      z-index: 10; 
+      box-sizing: border-box; 
+    }
+  </style>
 </head>
 <body>
 
-<div id="viewport">
-    <div class="header">
-        Консьерж НК3 <span id="current-month"></span>
-    </div>
-    <canvas id="matrix" width="1080" height="1920"></canvas>
-</div>
+  <div id="viewport"> 
+    <div class="header"> 
+      Консьерж НК3 <span id="current-month"></span> 
+    </div> 
+    <div id="grid"></div> 
+    <canvas id="matrix" width="1080" height="1920"></canvas> 
+  </div>
 
 <script>
-    const now = new Date();
-    const month = String(now.getMonth() + 1).padStart(2, '0'); 
-    const year = now.getFullYear();
-    document.getElementById('current-month').innerText = `${month}/${year}`;
+// --- ДИНАМИЧЕСКИЙ МЕСЯЦ И ГОД ---
+const now = new Date();
+const month = String(now.getMonth() + 1).padStart(2, '0');
+const year = now.getFullYear();
+document.getElementById('current-month').innerText = `${month}/${year}`;
 
-    const viewport = document.getElementById('viewport');
-    const canvas = document.getElementById('matrix');
-    const ctx = canvas.getContext('2d');
+const viewport = document.getElementById('viewport');
+const canvas = document.getElementById('matrix');
+const ctx = canvas.getContext('2d');
 
-    const fontSize = 42;          
-    const columnSpacing = 2;    
-    const speedInterval = 80;     
+// --- НАСТРОЙКИ МАТРИЦЫ ---
+const fontSize = 42; 
+const columnSpacing = 2; 
+const speedInterval = 80; 
 
-    const columns = Math.floor(canvas.width / (fontSize * columnSpacing));
-    let drops = new Array(columns).fill(1);
-	
-    // ИСПРАВЛЕНО: используем правильную переменную 'columns'
-    const columnOffsets = [];
-    for (let i = 0; i < columns; i++) { 
-        columnOffsets[i] = Math.floor(Math.random() * 192); 
+// Вычисляем количество колонок
+const columns = Math.floor(canvas.width / (fontSize * columnSpacing));
+
+// Переменные для управления анимацией
+let drops = [];
+let columnOffsets = [];
+let greenRooms = [];
+let redRooms = [];
+let animationTimerId = null;
+
+// --- ФУНКЦИЯ ПОЛНОГО ПЕРЕЗАПУСКА ЭФФЕКТА СВЕРХУ ВНИЗ ---
+function resetMatrixAnimation() {
+    console.log("Матрица Чередования: Полный сброс анимации.");
+    
+    // 1. Очищаем холст
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 2. Сбрасываем капли на самый верх
+    drops = new Array(columns).fill(1);
+    
+    // 3. Заполняем массив смещений случайными числами
+    // Каждый столбец сразу начнется со своего уникального номера квартиры
+    columnOffsets = [];
+    for (let i = 0; i < columns; i++) {
+        columnOffsets.push(Math.floor(Math.random() * 1000));
     }
-
-    // Списки комнат, разделенные по статусам для быстрого выбора
-    let greenRooms = [];
-    let redRooms = [];
-
-
-    async function getSharedData() {
-        const CSV_URL =  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv'; 
-        const CACHE_KEY = 'sheet_data';
-        const TIMESTAMP_KEY = 'sheet_timestamp';
-        const TTL = 5 * 60 * 1000;
-
-        const cached = localStorage.getItem(CACHE_KEY);
-        const lastUpdate = localStorage.getItem(TIMESTAMP_KEY);
-        const currentNow = Date.now();
-
-        if (cached && lastUpdate && (currentNow - lastUpdate < TTL)) {
-			console.log('Фрейм взял данные из LocalStorage');
-            return cached;
-        }
-
-        try {
-            console.log('Фрейм делает сетевой запрос...');
-            const response = await fetch(CSV_URL);
-            if (!response.ok) throw new Error('Network response was not ok');
-            
-            const data = await response.text();
-            localStorage.setItem(CACHE_KEY, data);
-            localStorage.setItem(TIMESTAMP_KEY, currentNow.toString());
-            return data;
-        } catch (err) {
-            console.error('Ошибка загрузки:', err);
-            return cached || "";
-        }
+    
+    // 4. Стираем старый таймер отрисовки из памяти
+    if (animationTimerId) {
+        clearInterval(animationTimerId);
     }
+    
+    // 5. Запускаем отрисовку заново
+    animationTimerId = setInterval(draw, speedInterval);
+}
 
-    function updateData() {
-        getSharedData().then(csv => {
-            if (!csv) return;
+// --- ФУНКЦИЯ-ПРИЕМНИК ДЛЯ СВЯЗИ С ГЛАВНОЙ СТРАНИЦЕЙ ---
+window.updateFrameData = function(pageData) {
+    console.log('Фрейм Матрицы Чередования активирован. Обновляем данные...');
+    
+    // Читаем свежий CSV напрямую из LocalStorage
+    const csv = localStorage.getItem('sheet_data');
+    if (!csv) return;
 
-            const rows = csv.split(/\r?\n/).filter(row => row.trim() !== "");
-            const headers = rows[0].split(",").map(h => h.trim().toLowerCase());
+    const rows = csv.split(/\r?\n/).filter(row => row.trim() !== "");
+    const headers = rows[0].split(",").map(h => h.trim().toLowerCase());
+    const idIdx = headers.indexOf("id");
+    const currentIdx = headers.indexOf("current");
+    
+    const newGreen = [];
+    const newRed = [];
+
+    rows.slice(1).forEach(rowStr => {
+        const row = rowStr.split(",");
+        const idRaw = row[idIdx]?.trim();
+        const current = row[currentIdx]?.trim() || "0";
+        
+        if (idRaw) {
+            const isZero = idRaw === "0";
+            const startsWithI = idRaw.toLowerCase().startsWith('i');
             
-            const idIdx = headers.indexOf("id");
-            const currentIdx = headers.indexOf("current");
-
-            const newGreen = [];
-            const newRed = [];
-            
-            rows.slice(1).forEach(rowStr => {
-                const row = rowStr.split(",");
-                const idRaw = row[idIdx]?.trim();
-                const current = row[currentIdx]?.trim() || "0";
-                
-                if (idRaw) {
-                    const isZero = idRaw === "0";
-                    const startsWithI = idRaw.toLowerCase().startsWith('i');
-
-                    if (!isZero && !startsWithI) {
-                        // Преобразуем строку в число
-                        const idAsNumber = Number(idRaw);
-
-                        // Проверяем, что это корректное число (не NaN)
-                        if (!isNaN(idAsNumber)) {
-                            if (current === "1") {
-                                newGreen.push(idAsNumber);
-                            } else {
-                                newRed.push(idAsNumber);
-                            }
-                        }
+            if (!isZero && !startsWithI) {
+                const idAsNumber = Number(idRaw);
+                if (!isNaN(idAsNumber)) {
+                    if (current === "1") {
+                        newGreen.push(idAsNumber);
+                    } else {
+                        newRed.push(idAsNumber);
                     }
                 }
-            });
-
-            // Сортируем полученные массивы от меньшего к большему
-            newGreen.sort((a, b) => a - b);
-            newRed.sort((a, b) => a - b);
-
-            // Заполняем рабочие массивы числами (уже отсортированными)
-            greenRooms = newGreen.length ? newGreen : Array.from({length: 96}, (_, i) => i * 2 + 2);
-            redRooms = newRed.length ? newRed : Array.from({length: 96}, (_, i) => i * 2 + 1);
-
-            console.log(`Данные обновлены после фильтрации. Зеленых: ${greenRooms.length}, Красных: ${redRooms.length}`);
-        });
-    }
-
-
-
-    updateData();
-    setInterval(updateData, 10000); 
-
-	function draw() {
-		// ЗАЩИТА: Если массивы еще не успели загрузиться из CSV, выходим из функции
-		if (greenRooms.length === 0 || redRooms.length === 0) return;
-
-		ctx.shadowBlur = 0; 
-		ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-		ctx.font = fontSize + 'px "VT323", monospace';
-		ctx.textAlign = 'right';
-
-		for (let i = 0; i < drops.length; i++) {
-			let roomId;
-			let targetColor;
-
-			// Текущий шаг падения + персональное случайное смещение столбца
-			const currentDropStep = drops[i] + columnOffsets[i];
-
-			// Логика чередования: четные индексы i — зеленые, нечетные — красные
-			if (i % 2 === 0) {
-				targetColor = '#0f0';
-				// Индекс идет по порядку, но стартует со случайного элемента
-				const index = currentDropStep % greenRooms.length;
-				roomId = greenRooms[index] || "—";
-			} else {
-				targetColor = '#f00';
-				// Индекс идет по порядку, но стартует со случайного элемента
-				const index = currentDropStep % redRooms.length;
-				roomId = redRooms[index] || "—";
-			}
-			
-			ctx.fillStyle = targetColor;
-			ctx.shadowColor = targetColor; 
-			ctx.shadowBlur = 10;           
-			
-			const xPosition = canvas.width - (i * fontSize * columnSpacing) - 20;
-			const yPosition = drops[i] * fontSize;
-			
-			ctx.fillText(roomId, xPosition, yPosition);
-
-			if (yPosition > canvas.height && Math.random() > 0.98) {
-				drops[i] = 0;
-				columnOffsets[i] = Math.floor(Math.random() * 1000);
-			}
-			drops[i]++;
-		}
-	}
-
-
-
-
-    document.fonts.ready.then(() => {
-        setInterval(draw, speedInterval);
+            }
+        }
     });
 
-    function resizeViewport() {
-        const targetWidth = 1080;
-        const targetHeight = 1920;
-        
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-        
-        const scale = Math.min(windowWidth / targetWidth, windowHeight / targetHeight);
-        viewport.style.transform = `scale(${scale})`;
-    }
+    // Сортируем полученные массивы
+    newGreen.sort((a, b) => a - b);
+    newRed.sort((a, b) => a - b);
 
-    window.addEventListener('resize', resizeViewport);
-    resizeViewport();
+    // Заполняем дефолтными значениями, если таблица была пуста
+    greenRooms = newGreen.length ? newGreen : Array.from({length: 96}, (_, i) => i * 2 + 2);
+    redRooms = newRed.length ? newRed : Array.from({length: 96}, (_, i) => i * 2 + 1);
+
+    console.log(`Данные обновлены локально. Зеленых: ${greenRooms.length}, Красных: ${redRooms.length}`);
+    
+    // Перезапускаем анимацию "сверху вниз" со случайными числами
+    resetMatrixAnimation();
+};
+
+// --- АНИМАЦИЯ МАТРИЦЫ ---
+function draw() {
+    if (greenRooms.length === 0 || redRooms.length === 0) return;
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = fontSize + 'px "VT323", monospace'; 
+    ctx.textAlign = 'right';
+
+    for (let i = 0; i < drops.length; i++) {
+        let roomId;
+        let targetColor;
+        
+        // Текущий шаг падения + случайное смещение столбца
+        const currentDropStep = drops[i] + columnOffsets[i]; 
+
+        // Логика чередования: четные индексы i — зеленые, нечетные — красные
+        if (i % 2 === 0) {
+            targetColor = '#0f0'; 
+            const index = currentDropStep % greenRooms.length;
+            roomId = greenRooms[index] || "—";
+        } else {
+            targetColor = '#f00'; 
+            const index = currentDropStep % redRooms.length;
+            roomId = redRooms[index] || "—";
+        }
+
+        ctx.fillStyle = targetColor;
+        ctx.shadowColor = targetColor; 
+        ctx.shadowBlur = 10; 
+
+        const xPosition = canvas.width - (i * fontSize * columnSpacing) - 20;
+        const yPosition = drops[i] * fontSize;
+        
+        ctx.fillText(roomId, xPosition, yPosition);
+
+        // Когда столбик ушел за экран, отправляем наверх и меняем смещение цифр
+        if (yPosition > canvas.height && Math.random() > 0.98) {
+            drops[i] = 0;
+            columnOffsets[i] = Math.floor(Math.random() * 1000);
+        }
+        drops[i]++;
+    }
+}
+
+// Запуск при первой загрузке после проверки шрифтов
+if (document.fonts) {
+    document.fonts.ready.then(() => {
+        window.updateFrameData();
+    });
+} else {
+    window.onload = function() {
+        window.updateFrameData();
+    };
+}
+
+// --- АВТОМАТИЧЕСКОЕ МАСШТАБИРОВАНИЕ КАНВАСА ---
+function resizeViewport() {
+    const targetWidth = 1080;
+    const targetHeight = 1920;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const scale = Math.min(windowWidth / targetWidth, windowHeight / targetHeight);
+    viewport.style.transform = `scale(${scale})`;
+}
+window.addEventListener('resize', resizeViewport);
+resizeViewport();
 </script>
 </body>
 </html>
