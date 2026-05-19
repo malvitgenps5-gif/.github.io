@@ -160,16 +160,23 @@ function showNext() {
   if (nextFrame) {
     nextFrame.classList.add("active");
     nextFrame.tabIndex = "0";
+
+    // --- ДОБАВЛЕННЫЙ БЛОК ДЛЯ ОБНОВЛЕНИЯ ДАННЫХ ВНУТРИ ФРЕЙМА ---
+    // Проверяем, что фрейм полностью загрузился и у него есть функция обновления
+    if (nextFrame.contentWindow && typeof nextFrame.contentWindow.updateFrameData === 'function') {
+      console.log(`Передаем новые данные во фрейм: ${currentPage.url}`);
+      // Вызываем функцию внутри фрейма и передаем туда данные текущей строки CSV
+      nextFrame.contentWindow.updateFrameData(currentPage); 
+    }
+    // -----------------------------------------------------------
   } else {
     console.error(`Фрейм для URL ${currentPage.url} не найден в DOM`);
   }
 
-  // Переходим к следующему элементу по кругу
   current = (current + 1) % pages.length;
-
-  // Запуск таймера для этого слайда
   timerId = setTimeout(showNext, currentPage.duration);
 }
+
 
 // Принудительное обновление содержимого фреймов из сети (для GitHub Pages)
 function reloadAllFrames() {
