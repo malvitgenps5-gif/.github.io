@@ -4,92 +4,112 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ЖК Дмитриевский</title>
-<style>
-  html, body {
-    margin: 0; padding: 0;
-    background: black;
-    height: 100vh;
-    overflow: hidden;
-  }
+  <style>
+    html, body { 
+      margin: 0; 
+      padding: 0; 
+      background: black; 
+      height: 100vh; 
+      overflow: hidden; 
+    }
+    .screen { 
+      width: 1080px; 
+      height: 1920px; 
+      position: relative; 
+      background: black; 
+      margin: 0 auto; 
+    }
+    /* Общий контейнер, где логотипы лежат друг на друге */
+    .logo-container { 
+      position: absolute; 
+      top: 50%; 
+      left: 50%; 
+      width: 1024px; 
+      height: 1024px; 
+      transform: translate(-50%, -50%); 
+    }
+    /* Базовый стиль обертки-шторки */
+    .wrapper { 
+      position: absolute; 
+      top: 0; 
+      height: 100%; 
+      overflow: hidden; /* Скрывает часть картинки */
+      transform: translateZ(0); 
+    }
+    .logo { 
+      width: 1024px; 
+      height: 1024px; 
+      position: absolute; 
+      top: 0; 
+      display: block; 
+    }
+    
+    /* АНИМАЦИОННЫЕ КЛАССЫ (вынесены отдельно для удобного сброса) */
+    .animate-left {
+      left: 0; 
+      width: 0; 
+      animation: revealWidth 5s ease-in-out forwards;
+    }
+    .animate-left .logo { 
+      left: 0; 
+    }
 
-  .screen {
-    width: 1080px;
-    height: 1920px;
-    position: relative;
-    background: black;
-    margin: 0 auto;
-  }
+    .animate-right {
+      right: 0; 
+      width: 0; 
+      animation: revealWidth 5s ease-in-out forwards;
+    }
+    .animate-right .logo { 
+      right: 0; 
+    }
 
-  /* Общий контейнер, где логотипы лежат друг на друге */
-  .logo-container {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 1024px;
-    height: 1024px;
-    transform: translate(-50%, -50%);
-  }
-
-  /* Базовый стиль обертки-шторки */
-  .wrapper {
-    position: absolute;
-    top: 0;
-    height: 100%;
-    overflow: hidden; /* Скрывает часть картинки */
-    transform: translateZ(0);
-  }
-
-  .logo {
-    width: 1024px;
-    height: 1024px;
-    position: absolute;
-    top: 0;
-    display: block;
-  }
-
-  /* ЛЕВАЯ ШТОРКА: крепится слева, растет вправо */
-  .reveal-left {
-    left: 0;
-    width: 0;
-    animation: revealWidth 5s ease-in-out forwards;
-  }
-  .reveal-left .logo {
-    left: 0; /* Картинка прижата к левому краю и не движется */
-  }
-
-  /* ПРАВАЯ ШТОРКА: крепится справа, растет влево */
-  .reveal-right {
-    right: 0;
-    width: 0;
-    animation: revealWidth 5s ease-in-out forwards;
-  }
-  .reveal-right .logo {
-    right: 0; /* Картинка прижата к правому краю и не движется */
-  }
-
-  @keyframes revealWidth {
-    from { width: 0; }
-    to   { width: 100%; } /* Раскрываем контейнер на всю ширину */
-  }
-</style>
+    @keyframes revealWidth { 
+      from { width: 0; } 
+      to { width: 100%; } /* Раскрываем контейнер на всю ширину */
+    }
+  </style>
 </head>
 <body>
 
-<div class="screen">
-  <div class="logo-container">
-    
-    <!-- Проявляется слева направо -->
-    <div class="wrapper reveal-left">
-      <img src="../svg/dmit8_2.svg" class="logo">
+  <div class="screen">
+    <div class="logo-container">
+      <!-- Проявляется слева направо -->
+      <div id="left-shutter" class="wrapper">
+        <img src="../svg/dmit8_2.svg" class="logo">
+      </div>
+      <!-- Проявляется справа налево -->
+      <div id="right-shutter" class="wrapper">
+        <img src="../svg/dmit8_1.svg" class="logo">
+      </div>
     </div>
-
-    <!-- Проявляется справа налево -->
-    <div class="wrapper reveal-right">
-      <img src="../svg/dmit8_1.svg" class="logo">
-    </div>
-
   </div>
-</div>
+
+<script>
+// Функция-приемник, которую автоматически вызовет главная страница перед показом фрейма
+window.updateFrameData = function(pageData) {
+    console.log("Перезапуск анимации шторок...");
+
+    const leftShutter = document.getElementById('left-shutter');
+    const rightShutter = document.getElementById('right-shutter');
+
+    if (!leftShutter || !rightShutter) return;
+
+    // 1. Полностью удаляем анимационные CSS-классы
+    leftShutter.classList.remove('animate-left');
+    rightShutter.classList.remove('animate-right');
+
+    // 2. Хитрый трюк для браузера (Trigger Reflow)
+    // Чтение этого свойства заставляет браузер мгновенно применить удаление классов
+    void leftShutter.offsetWidth; 
+
+    // 3. Возвращаем классы назад — анимация гарантированно стартует с 0%
+    leftShutter.classList.add('animate-left');
+    rightShutter.classList.add('animate-right');
+};
+
+// Первичный автозапуск при первой загрузке страницы
+window.updateFrameData();
+</script>
 
 </body>
 </html>
