@@ -2,191 +2,214 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ЖК Дмитриевский</title>
-
+  <title>Слайдер Фреймов</title>
+  
+  <!-- 1. Оптимизация подключения к Google Fonts -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://googleapis.com" rel="stylesheet">
-	
-	<link rel="preload" href="/.github.io/fonts/LEVIBRUSH.woff2" as="font" type="font/woff2" crossorigin> 
-	<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap" rel="stylesheet">
-	
 
-  <style>
-	 @font-face {
-    font-family: 'LeviBrush';   
-    src: url('/.github.io/fonts/LEVIBRUSH.woff2') format('woff2'); 
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
- 	}
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: black;
+  <!-- 2. Предзагрузка локального шрифта для кеширования -->
+  <link rel="preload" href="/.github.io/fonts/LEVIBRUSH.woff2" as="font" type="font/woff2" crossorigin> 
+
+  <!-- 3. Подключение Comfortaa -->
+  <link href="https://googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap" rel="stylesheet"> 
+
+  <!-- 4. Стили для LeviBrush и фреймов -->
+  <style> 
+    @font-face { 
+      font-family: 'LeviBrush'; 
+      src: url('/.github.io/fonts/LEVIBRUSH.woff2') format('woff2'); 
+      font-weight: normal; 
+      font-style: normal; 
+      font-display: swap; 
     }
 
-    .frame {
-      position: absolute;
+    /* Стили для контейнера и плавного переключения фреймов */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000; /* Фон при переключении */
+    }
+    .frame-container {
+      position: relative;
       width: 100%;
       height: 100vh;
-      border: none;
+    }
+    .my-frame {
+      position: absolute;
       top: 0;
       left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
       opacity: 0;
-      transition: opacity 1s ease; /* длительность fade */
-	 /* background: black;*/
-	  
+      pointer-events: none;
+      transition: opacity 0.5s ease; /* Плавное растворение */
     }
-
-    .active {
+    .my-frame.active {
       opacity: 1;
-      z-index: 2;
+      pointer-events: auto;
     }
   </style>
 </head>
 <body>
 
-<iframe id="frame1" class="frame active"></iframe>
-<iframe id="frame2" class="frame"></iframe>
+  <div id="container" class="frame-container">
+    <!-- Фреймы создаются автоматически скриптом -->
+  </div>
 
 <script>
+// !!! ВСТАВЬТЕ СЮДА ВАШУ ССЫЛКУ НА CSV ИЗ GOOGLE ТАБЛИЦ !!!
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv'; 
+
+const CACHE_KEY = 'sheet_data';
+const TIMESTAMP_KEY = 'sheet_timestamp';
+const TTL = 5 * 60 * 1000; // 5 минут кеша для данных таблицы
+
 async function getSharedData() {
-    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQJOCD4_INUxusWkaSaPbGhGBh5tMVAylQrQ4zYLK7DYunMhYkxOpC9mm4phbM3xKqmo073qzGgntE/pub?gid=469920882&single=true&output=csv';
-    const CACHE_KEY = 'sheet_data';
-    const TIMESTAMP_KEY = 'sheet_timestamp';
-    const TTL = 5 * 60 * 1000; // 5 минут в миллисекундах
+  const cached = localStorage.getItem(CACHE_KEY);
+  const lastUpdate = parseInt(localStorage.getItem(TIMESTAMP_KEY), 10);
+  const now = Date.now();
 
-    const cached = localStorage.getItem(CACHE_KEY);
-    const lastUpdate = parseInt(localStorage.getItem(TIMESTAMP_KEY), 10);
-    const now = Date.now();
+  if (cached && lastUpdate && (now - lastUpdate < TTL)) {
+    console.log('Данные CSV взяты из LocalStorage');
+    return cached;
+  }
 
-    // Если данные есть и они свежие — берем их
-    if (cached && lastUpdate && (now - lastUpdate < TTL)) {
-        console.log('Фрейм взял данные из LocalStorage');
-        return cached;
-    }
-
-    // Если данных нет или они протухли — запрашиваем
-    try {
-        console.log('Фрейм делает сетевой запрос...');
-        const response = await fetch(CSV_URL);
-        const data = await response.text();
-		
-        // Сохраняем для следующих фреймов
-        localStorage.setItem(CACHE_KEY, data);
-        localStorage.setItem(TIMESTAMP_KEY, now.toString());
-
-        return data;
-    } catch (err) {
-        console.error('Ошибка загрузки:', err);
-        return cached; // Если сеть упала, отдаем хоть что-то старое
-    }
+  try {
+    console.log('Сетевой запрос за новым CSV...');
+    const response = await fetch(CSV_URL);
+    const data = await response.text();
+    localStorage.setItem(CACHE_KEY, data);
+    localStorage.setItem(TIMESTAMP_KEY, now.toString());
+    return data;
+  } catch (err) {
+    console.error('Ошибка загрузки CSV, взят старый кеш:', err);
+    return cached;
+  }
 }
 
 let pages = [];
 let current = 0;
-let activeFrame = 1;
+let timerId = null;
 
-// Запуск при загрузке фрейма
-getSharedData().then(csv => {
-    const rows = csv.split("\n").map(r => r.split(","));
-    
-    // Чистим заголовки, чтобы поиск индексов сработал точно
-    const headers = rows[0].map(h => h.trim());
-    const urlIdx = headers.indexOf("url");
-    const durationIdx = headers.indexOf("duration");
+// Парсинг полученной CSV строки
+function parseCSV(csv) {
+  const rows = csv.split("\n").map(r => r.split(","));
+  const headers = rows[0].map(h => h.trim());
+  const urlIdx = headers.indexOf("url");
+  const durationIdx = headers.indexOf("duration");
 
-    pages = rows.slice(1)
-        .map(row => {
-            return {
-                url: row[urlIdx]?.trim() || "",
-                duration: row[durationIdx]?.trim() || ""
-            };
-        })
-        // Фильтрация после выбора столбцов:
-        // Оставляем только те строки, где есть и ссылка, и длительность
-        .filter(page => page.url !== "" && page.duration !== "");
+  return rows.slice(1)
+    .map(row => ({
+      url: row[urlIdx]?.trim() || "",
+      duration: parseInt(row[durationIdx]?.trim(), 10) || 30000
+    }))
+    .filter(page => page.url !== "" && !isNaN(page.duration));
+}
 
-    startSlider();
-    
-    console.log('Данные получены. Полезных строк:', pages.length);
-});
+// Создание только уникальных фреймов в DOM
+function createAllFrames() {
+  const container = document.getElementById("container");
+  container.innerHTML = ""; 
 
+  // Убираем дубликаты URL для экономии памяти
+  const uniqueUrls = [...new Set(pages.map(page => page.url))];
 
-function startSlider() {
+  uniqueUrls.forEach((url) => {
+    const iframe = document.createElement("iframe");
+    // Хешируем URL в безопасную строку для использования в ID
+    iframe.id = `frame_${btoa(url).replace(/=/g, '')}`; 
+    iframe.src = "frame/" + url;
+    iframe.className = "my-frame";
+    iframe.tabIndex = "-1"; 
+    container.appendChild(iframe);
+  });
+  
+  console.log(`Массив шагов: ${pages.length}. Создано уникальных фреймов в DOM: ${uniqueUrls.length}`);
+}
+
+// Показ следующего слайда (порядок из CSV полностью сохранен)
+function showNext() {
   if (pages.length === 0) return;
 
-  showNext();
-}
+  // Скрываем старый активный фрейм
+  const activeFrame = document.querySelector(".my-frame.active");
+  if (activeFrame) {
+    activeFrame.classList.remove("active");
+    activeFrame.tabIndex = "-1";
+  }
 
-function showNext() {
-  if (current >= pages.length) current = 0; // Защита от выхода за границы массива
+  const currentPage = pages[current];
+  const frameId = `frame_${btoa(currentPage.url).replace(/=/g, '')}`;
+  const nextFrame = document.getElementById(frameId);
   
-  const page = pages[current];
-  const duration = Number(page.duration);
-  const safeDuration = isNaN(duration) ? 30000 : duration;
-
-  const frame1 = document.getElementById("frame1");
-  const frame2 = document.getElementById("frame2");
-
-  let currentFrame = activeFrame === 1 ? frame1 : frame2;
-  let nextFrame = activeFrame === 1 ? frame2 : frame1;
-
-  // 1. Сначала очищаем старый обработчик и ставим новый
-  nextFrame.onload = null; 
-  nextFrame.onload = () => {
-    // 2. Переключаем видимость
+  if (nextFrame) {
     nextFrame.classList.add("active");
-    currentFrame.classList.remove("active");
+    nextFrame.tabIndex = "0";
+  } else {
+    console.error(`Фрейм для URL ${currentPage.url} не найден в DOM`);
+  }
 
-    // 3. Обновляем состояние
-    activeFrame = activeFrame === 1 ? 2 : 1;
-    current = (current + 1) % pages.length;
+  // Переходим к следующему элементу по кругу
+  current = (current + 1) % pages.length;
 
-    // 4. Планируем следующий переход
-    setTimeout(showNext, duration);
-  };
-
-  // 5. Обработка ошибки (чтобы цикл не встал)
-  nextFrame.onerror = () => {
-    console.error("Ошибка загрузки страницы");
-    current = (current + 1) % pages.length;
-    setTimeout(showNext, 1000); // Пробуем следующую через секунду
-  };
-
-  // 6. И только в самом конце запускаем загрузку
-  nextFrame.src = "frame/" + page.url;
+  // Запуск таймера для этого слайда
+  timerId = setTimeout(showNext, currentPage.duration);
 }
 
+// Принудительное обновление содержимого фреймов из сети (для GitHub Pages)
+function reloadAllFrames() {
+  console.log("Принудительное обновление контента страниц внутри фреймов...");
+  const frames = document.querySelectorAll(".my-frame");
+  
+  frames.forEach(iframe => {
+    const baseUrl = iframe.src.split('?')[0]; 
+    // Добавление ?v= заставляет браузер игнорировать кеш GitHub Pages
+    iframe.src = baseUrl + "?v=" + Date.now();
+  });
+}
+
+// Фоновое обновление списка страниц из CSV
 async function refreshPagesList() {
-    const csv = await getSharedData();
-    const rows = csv.split("\n").map(r => r.split(","));
-    
-    // Обязательно добавляем [0], чтобы читать заголовки из первой строки
-    const headers = rows[0].map(h => h.trim()); 
-    const urlIdx = headers.indexOf("url");
-    const durationIdx = headers.indexOf("duration");
+  const csv = await getSharedData();
+  if (!csv) return;
 
-    const newPages = rows.slice(1)
-        .map(row => ({
-            url: row[urlIdx]?.trim() || "",
-            duration: row[durationIdx]?.trim() || ""
-        }))
-        .filter(page => page.url !== "" && page.duration !== "");
+  const newPages = parseCSV(csv);
+  if (newPages.length > 0) {
+    // Проверяем, изменился ли сам состав URL-адресов
+    const oldUrls = pages.map(p => p.url).join(',');
+    const newUrls = newPages.map(p => p.url).join(',');
 
-    if (newPages.length > 0) {
-        pages = newPages;
-        console.log('Список ссылок обновлен в фоне. Всего:', pages.length);
+    pages = newPages;
+    console.log('Список шагов обновлен в фоне. Всего:', pages.length);
+
+    // Если состав ссылок изменился, перестраиваем фреймы в DOM
+    if (oldUrls !== newUrls) {
+      console.log('Состав страниц изменился, перестраиваем фреймы...');
+      createAllFrames();
     }
+  }
 }
 
-setInterval(() => {
-    refreshPagesList();
-}, 360000); 
+// Старт приложения при первой загрузке
+getSharedData().then(csv => {
+  if (!csv) return;
+  pages = parseCSV(csv);
 
+  if (pages.length > 0) {
+    createAllFrames();
+    showNext();
+  }
+});
+
+// ТАЙМЕРЫ АВТООБНОВЛЕНИЯ CONTEXT
+setInterval(refreshPagesList, 360000);  // Проверка таблицы CSV каждые 6 минут
+setInterval(reloadAllFrames, 3600000);  // Перезагрузка файлов страниц из сети каждый 1 час
 </script>
-
 </body>
 </html>
