@@ -2,18 +2,12 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>ЖК Дмитриевский</title>
-  
-  <!-- 1. Оптимизация подключения к Google Fonts -->
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://googleapis.com" rel="stylesheet">
-
-  <!-- 2. Предзагрузка локального шрифта для кеширования -->
+  <title>ЖК Дмитриевский</title>  
+  <! Предзагрузка локального шрифта для кеширования -->
   <link rel="preload" href="/.github.io/fonts/LEVIBRUSH.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/.github.io/fonts/Comfortaa.woff2" as="font" type="font/woff2" crossorigin>
-
-  <!-- 4. Стили для LeviBrush и фреймов -->
+  <link rel="preload" href="/.github.io/fonts/Roboto.woff2" as="font" type="font/woff2" crossorigin>
+	
   <style> 
     @font-face { 
       font-family: 'LeviBrush'; 
@@ -31,6 +25,14 @@
       font-style: normal;
       font-display: swap;
     }
+	/* Локальный Roboto (для Windows/iOS, а на Android подхватится из системы) */
+	@font-face {
+	font-family: 'RobotoLocal';
+	src: url('/.github.io/fonts/Roboto.woff2') format('woff2');
+	font-weight: normal;
+	font-style: normal;
+	font-display: swap;
+	}
 	  
     /* Стили для контейнера и плавного переключения фреймов */
     html, body {
