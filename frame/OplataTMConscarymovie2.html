@@ -76,7 +76,7 @@
         z-index: 2;
         font-family: 'Comfortaa', cursive;
         font-weight: bold; /* Жирный шрифт лучше читается на экранах ТВ */
-        font-size: 100px; /* Подобранный размер для длинных стихов */
+        font-size: 80px; /* Подобранный размер для длинных стихов */
         line-height: 1.4;
         text-align: center;
         color: #eec11e; /* Чистый белый цвет */
@@ -87,6 +87,8 @@
         white-space: normal;
         word-wrap: break-word;
         pointer-events: none;
+		-webkit-text-stroke: 3px #eec11e;
+		paint-order: stroke fill;
     }
 
     /* Нижний блок: Цифры */
