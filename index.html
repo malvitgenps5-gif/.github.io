@@ -8,62 +8,63 @@
   <link rel="preload" href="/.github.io/fonts/Comfortaa.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/.github.io/fonts/Roboto.woff2" as="font" type="font/woff2" crossorigin>
 	
-  <style> 
-    @font-face { 
-      font-family: 'LeviBrush'; 
-      src: url('/.github.io/fonts/LEVIBRUSH.woff2') format('woff2'); 
-      font-weight: normal; 
-      font-style: normal; 
-      font-display: swap; 
-    }
-	  
-    /* Локальный Comfortaa */
-    @font-face {
-      font-family: 'Comfortaa';
-      src: url('/.github.io/fonts/Comfortaa.woff2') format('woff2');
-      font-weight: 300 700; /* Поддержка вариативного диапазона весов */
-      font-style: normal;
-      font-display: swap;
-    }
-	/* Локальный Roboto (для Windows/iOS, а на Android подхватится из системы) */
-	@font-face {
-	font-family: 'RobotoLocal';
-	src: url('/.github.io/fonts/Roboto.woff2') format('woff2');
-	font-weight: normal;
-	font-style: normal;
-	font-display: swap;
-	}
-	  
-    /* Стили для контейнера и плавного переключения фреймов */
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: #000; /* Фон при переключении */
-    }
-    .frame-container {
-      position: relative;
-      width: 100%;
-      height: 100vh;
-    }
-    .my-frame {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border: none;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.5s ease; /* Плавное растворение */
-    }
-    .my-frame.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
-  </style>
+<style> 
+  @font-face { 
+    font-family: 'LeviBrush'; 
+    src: url('/fonts/LEVIBRUSH.woff2') format('woff2'); 
+    font-weight: normal; 
+    font-style: normal; 
+    font-display: swap; 
+  }
+
+  @font-face {
+    font-family: 'Comfortaa';
+    src: url('/fonts/Comfortaa.woff2') format('woff2');
+    font-weight: 300 700;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  /* Обнуляем отступы на самом верхнем уровне */
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #000; /* Черные поля по бокам, если экран слишком широкий */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* ИСПРАВЛЕНО: Главный контейнер теперь жестко держит пропорции 1080x1920 */
+  .frame-container {
+    position: relative;
+    width: 1080px;
+    height: 1920px;
+    transform-origin: center center;
+    flex-shrink: 0;
+  }
+
+  /* Фреймы просто занимают 100% от нашего откалиброванного контейнера */
+  .my-frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+
+  .my-frame.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+</style>
 </head>
 <body>
 
