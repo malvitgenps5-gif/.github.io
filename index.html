@@ -225,8 +225,30 @@ getSharedData().then(csv => {
 });
 
 // ТАЙМЕРЫ АВТООБНОВЛЕНИЯ CONTEXT
-setInterval(refreshPagesList, 360000);  // Проверка таблицы CSV каждые 6 минут
+setInterval(refreshPagesList, 300000);  // Проверка таблицы CSV каждые 5 минут
 setInterval(reloadAllFrames, 3600000);  // Перезагрузка файлов страниц из сети каждый 1 час
+
+// Автоматическое сжатие всего слайдера под размеры текущего окна браузера
+function resizeMainViewport() {
+    const container = document.getElementById("container");
+    if (!container) return;
+
+    const targetWidth = 1080;
+    const targetHeight = 1920;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+
+    // Вычисляем идеальный коэффициент, чтобы контейнер поместился целиком
+    const scale = Math.min(windowWidth / targetWidth, windowHeight / targetHeight);
+    
+    // Применяем масштабирование к главному контейнеру
+    container.style.transform = `scale(${scale})`;
+}
+
+// Запускаем при загрузке и при каждом изменении размеров окна
+window.addEventListener('resize', resizeMainViewport);
+// Небольшая задержка, чтобы DOM успел полностью построиться
+setTimeout(resizeMainViewport, 100);
 </script>
 </body>
 </html>
